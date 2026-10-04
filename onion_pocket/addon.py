@@ -19,6 +19,7 @@ the voice changer or saving the replay.
 from __future__ import annotations
 
 import logging
+import sys
 
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QColor, QPainter, QPixmap
@@ -119,6 +120,11 @@ class Pocket:
         """Onion Pocket's card on Settings → Remote: on / off, the QR code to pair a
         phone, a new key, the firewall rule, the port."""
         h = self.host
+        # Windows Firewall is the only one it knows: anywhere else there's no rule to
+        # add, so no prompt, no button and no hint about Windows' settings. Asked of
+        # sys.platform, not the host, whose allow_firewall answers False off Windows
+        # (which would read as "the prompt was turned down").
+        windows = sys.platform == "win32"
         card, cv = h.card(
             "Onion Pocket: your pads on your phone",
             "Scan the code with your phone's camera, and a tap on a pad plays it here. "
@@ -155,6 +161,7 @@ class Pocket:
                       "this network, only on a network Windows calls Private, and stops "
                       "Windows' own pop-up about this app")
         side.addWidget(fw)
+        fw.setVisible(windows)
         prow = QHBoxLayout()
         prow.addWidget(QLabel("Port"))
         port = QSpinBox()
@@ -167,7 +174,9 @@ class Pocket:
         side.addLayout(prow)
         hint = QLabel("Phone can't connect? Click <b>Let it through Windows Firewall</b>, "
                       "and in Windows Settings → Network &amp; internet → Wi-Fi, set this "
-                      "network to <b>Private</b>.")
+                      "network to <b>Private</b>." if windows else
+                      "Phone can't connect? Check it's on the same Wi-Fi as this "
+                      "computer, and that this computer's firewall lets in the port.")
         hint.setObjectName("hint")
         hint.setWordWrap(True)
         side.addWidget(hint)
@@ -188,7 +197,7 @@ class Pocket:
             else:
                 text = ("On. Scan the code with your phone's camera and open the link. "
                         "The phone must be on the same Wi-Fi as this PC.")
-                if lan.rule_state(self.port) == "blocked":
+                if windows and lan.rule_state(self.port) == "blocked":
                     text += (" Windows Firewall is blocking this app (its prompt was "
                              "cancelled once): in Windows Security → Firewall & "
                              "network protection → Allow an app through firewall, tick "
@@ -197,6 +206,8 @@ class Pocket:
 
         def ask_firewall():
             """The rule, after one line saying why Windows is about to ask."""
+            if not windows:
+                return
             state.setText("Windows will ask once so phones can reach Onion Board.")
             state.repaint()   # before Windows' prompt takes the screen
             ok = lan.allow_firewall(self.port, host=h)
@@ -206,14 +217,14 @@ class Pocket:
             self._set(enabled=b)
             # before the server listens on the network: with our rule in place first,
             # Windows has nothing to pop up about
-            if b and lan.rule_state(self.port) in ("missing", "stale"):
+            if b and windows and lan.rule_state(self.port) in ("missing", "stale"):
                 ask_firewall()
             refresh(self.apply())
 
         def set_port():
             if port.value() != self.port:
                 self._set(port=port.value())
-                if self.enabled and lan.rule_state(self.port) == "stale":
+                if windows and self.enabled and lan.rule_state(self.port) == "stale":
                     ask_firewall()   # the rule was for the old port: move it
                 refresh(self.apply())
 

@@ -1,5 +1,7 @@
 """The add-on against a stand-in host (tests/fakehost.py): off by default, its own
 key, starting only on a network, a hand-edited config, and its card on Settings."""
+import sys
+
 import pytest
 from PySide6.QtWidgets import QCheckBox, QLabel, QPushButton, QSpinBox
 
@@ -130,6 +132,23 @@ def test_saying_no_keeps_it_on_with_the_hint(host, firewall, monkeypatch):
     assert "Not changed" in host.flashed
     texts = " ".join(lb.text() for lb in card.findChildren(QLabel))
     assert "On. Scan the code" in texts and "Phone can't connect?" in texts
+
+
+def test_off_windows_there_is_no_firewall_to_ask(host, firewall, monkeypatch):
+    monkeypatch.setattr(lan, "lan_address", lambda: "pc.example")
+    monkeypatch.setattr(sys, "platform", "linux")
+    asked = []
+    host.allow_firewall = lambda name, port: asked.append((name, port)) or False
+    pocket = addon.create(host)
+    card = pocket.card()
+    card.pocket_on.setChecked(True)     # lan still thinks it's Windows: the card mustn't ask
+    assert asked == [] and firewall.asked == [] and pocket.server.running
+    assert "Not changed" not in host.flashed
+    texts = " ".join(lb.text() for lb in card.findChildren(QLabel))
+    assert "On. Scan the code" in texts and "Phone can't connect?" in texts
+    assert "Windows" not in texts
+    assert not any(b.isVisibleTo(card) for b in card.findChildren(QPushButton)
+                   if "Firewall" in b.text())
 
 
 def test_a_rule_for_the_old_port_or_copy_is_updated(host, firewall, monkeypatch):
