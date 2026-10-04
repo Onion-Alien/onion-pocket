@@ -9,7 +9,7 @@ issue.
 | When | Where | Why |
 |---|---|---|
 | You tick *Let phones on this Wi-Fi use it* (Settings → Remote; off by default) | listens on this PC's address on the local network only (port 7475 unless you change it), through Onion Board's control API server; answers only local-network addresses (private / link-local) | serves the phone page and lets a phone on your Wi-Fi list, play, stop and pause sounds, change the volume and category, and mute you. Never the mic, the voice changer or the replay |
-| You click *Let it through Windows Firewall* | Windows Firewall (no network traffic) | after Windows' admin prompt, one inbound rule: that port, TCP, Private networks, local subnet only |
+| You tick the box and Windows Firewall has no rule for it yet, or you click *Let it through Windows Firewall* | Windows Firewall (no network traffic) | after a line on the card and Windows' admin prompt, one inbound rule named `OnionPocket` in two parts with the same limits (that port, TCP, Private networks, local subnet only): one for the port, one for the app itself (`OnionBoard.exe`, or `pythonw.exe` when run from source). The app part is what stops Windows' own "has blocked some features" pop-up. Say no and nothing changes. Moving the port or the app replaces the rule (one more prompt). To check whether the rule is there, the add-on reads Windows' list of firewall rules from the registry, which needs no admin rights and changes nothing |
 
 Nothing else. No telemetry, no internet, nothing loaded from anywhere else.
 
@@ -35,5 +35,7 @@ outside your network. On shared or public Wi-Fi, leave it off.
 ## The page
 
 One HTML file served by the PC. Its Content-Security-Policy allows only its own
-script and style (by hash) and requests to the PC it came from
-(`connect-src 'self'`). Sound names are put on the page as text, never as markup.
+script and style (by hash), requests to the PC it came from (`connect-src 'self'`)
+and `data:` images, which is only its own tab icon (the logo, drawn in SVG). Nothing
+loads from anywhere else: no CDN, no web fonts, no pictures from the PC. Sound names
+are put on the page as text, never as markup.

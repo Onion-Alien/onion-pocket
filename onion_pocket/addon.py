@@ -152,7 +152,8 @@ class Pocket:
         side.addLayout(btns)
         fw = QPushButton("Let it through Windows Firewall…")
         fw.setToolTip("Windows asks for permission once. The rule only lets in phones on "
-                      "this network, and only on a network Windows calls Private")
+                      "this network, only on a network Windows calls Private, and stops "
+                      "Windows' own pop-up about this app")
         side.addWidget(fw)
         prow = QHBoxLayout()
         prow.addWidget(QLabel("Port"))
@@ -185,16 +186,35 @@ class Pocket:
             elif not live:
                 state.setText(f"Couldn't start: {err or self.server.error}")
             else:
-                state.setText("On. Scan the code with your phone's camera and open the "
-                              "link. The phone must be on the same Wi-Fi as this PC.")
+                text = ("On. Scan the code with your phone's camera and open the link. "
+                        "The phone must be on the same Wi-Fi as this PC.")
+                if lan.rule_state(self.port) == "blocked":
+                    text += (" Windows Firewall is blocking this app (its prompt was "
+                             "cancelled once): in Windows Security → Firewall & "
+                             "network protection → Allow an app through firewall, tick "
+                             "Private next to it.")
+                state.setText(text)
+
+        def ask_firewall():
+            """The rule, after one line saying why Windows is about to ask."""
+            state.setText("Windows will ask once so phones can reach Onion Board.")
+            state.repaint()   # before Windows' prompt takes the screen
+            ok = lan.allow_firewall(self.port)
+            h.flash(fw, "✓ Allowed" if ok else "Not changed")
 
         def set_on(b: bool):
             self._set(enabled=b)
+            # before the server listens on the network: with our rule in place first,
+            # Windows has nothing to pop up about
+            if b and lan.rule_state(self.port) in ("missing", "stale"):
+                ask_firewall()
             refresh(self.apply())
 
         def set_port():
             if port.value() != self.port:
                 self._set(port=port.value())
+                if self.enabled and lan.rule_state(self.port) == "stale":
+                    ask_firewall()   # the rule was for the old port: move it
                 refresh(self.apply())
 
         def new_key():
@@ -207,8 +227,8 @@ class Pocket:
             h.flash(copy, "✓ Copied")
 
         def firewall():
-            ok = lan.allow_firewall(self.port)
-            h.flash(fw, "✓ Allowed" if ok else "Not changed")
+            ask_firewall()
+            refresh(self.apply())
 
         on.toggled.connect(set_on)
         port.editingFinished.connect(set_port)

@@ -1,7 +1,7 @@
 """The add-on against a stand-in host (tests/fakehost.py): off by default, its own
 key, starting only on a network, a hand-edited config, and its card on Settings."""
 import pytest
-from PySide6.QtWidgets import QCheckBox, QLabel, QPushButton
+from PySide6.QtWidgets import QCheckBox, QLabel, QPushButton, QSpinBox
 
 from fakehost import FakeHost
 from onion_pocket import addon, lan, page
@@ -83,3 +83,85 @@ def test_the_card_says_why_it_could_not_start(host, monkeypatch):
     next(b for b in card.findChildren(QCheckBox)).setChecked(True)
     texts = " ".join(lb.text() for lb in card.findChildren(QLabel))
     assert "Couldn't start: port 7475 is already in use" in texts
+
+
+def ok_rule(port=7475):
+    from test_lan import stored
+    return [stored(app="", port=str(port)), stored(port=str(port), app=lan.this_program())]
+
+
+def test_nothing_asks_windows_without_a_click(host, firewall, monkeypatch):
+    monkeypatch.setattr(lan, "lan_address", lambda: "pc.example")
+    host.settings.update(enabled=True, port=7475)
+    pocket = addon.create(host)         # on at start-up, no rule: no prompt
+    pocket.card()
+    pocket.apply()
+    assert pocket.server.running and firewall.asked == []
+
+
+def test_ticking_it_on_asks_windows_once_before_listening(host, firewall, monkeypatch):
+    monkeypatch.setattr(lan, "lan_address", lambda: "pc.example")
+    pocket = addon.create(host)
+    card = pocket.card()
+    said = []
+    running_when_asked = []
+
+    def elevate(params, wait_s=60.0):
+        said.append(" ".join(lb.text() for lb in card.findChildren(QLabel)))
+        running_when_asked.append(pocket.server.running)
+        firewall.rules = ok_rule()
+        return True
+    monkeypatch.setattr(lan, "_elevate", elevate)
+    card.pocket_on.setChecked(True)
+    assert len(said) == 1 and running_when_asked == [False]
+    assert "Windows will ask once so phones can reach Onion Board" in said[0]
+    assert pocket.server.running and "✓ Allowed" in host.flashed
+    card.pocket_on.setChecked(False)
+    card.pocket_on.setChecked(True)     # the rule is there now: no second prompt
+    assert len(said) == 1
+
+
+def test_saying_no_keeps_it_on_with_the_hint(host, firewall, monkeypatch):
+    monkeypatch.setattr(lan, "lan_address", lambda: "pc.example")
+    pocket = addon.create(host)
+    card = pocket.card()
+    card.pocket_on.setChecked(True)     # firewall.allow is False: the prompt turned down
+    assert len(firewall.asked) == 1 and pocket.server.running
+    assert "Not changed" in host.flashed
+    texts = " ".join(lb.text() for lb in card.findChildren(QLabel))
+    assert "On. Scan the code" in texts and "Phone can't connect?" in texts
+
+
+def test_a_rule_for_the_old_port_or_copy_is_updated(host, firewall, monkeypatch):
+    monkeypatch.setattr(lan, "lan_address", lambda: "pc.example")
+    host.settings.update(enabled=True, port=7475)
+    firewall.rules = ok_rule(7475)
+    pocket = addon.create(host)
+    card = pocket.card()
+    spin = next(s for s in card.findChildren(QSpinBox))
+    spin.setValue(7476)
+    spin.editingFinished.emit()
+    assert firewall.asked == [f"/c {lan.firewall_command(7476, lan.this_program())}"]
+    firewall.rules = ok_rule(7476)
+    card.pocket_on.setChecked(False)
+    monkeypatch.setattr(lan, "this_program", lambda: r"C:\Somewhere else\OnionBoard.exe")
+    card.pocket_on.setChecked(True)     # the app moved: the rule is moved with it
+    assert len(firewall.asked) == 2 and r'program="C:\Somewhere else' in firewall.asked[1]
+
+
+def test_the_button_asks_too_and_a_block_is_explained(host, firewall, monkeypatch):
+    monkeypatch.setattr(lan, "lan_address", lambda: "pc.example")
+    host.settings.update(enabled=True, port=7475)
+    pocket = addon.create(host)
+    card = pocket.card()
+    next(b for b in card.findChildren(QPushButton)
+         if b.text().startswith("Let it through")).click()
+    assert len(firewall.asked) == 1
+    from test_lan import stored
+    firewall.rules = ok_rule() + [stored(name="x", action="Block", port="",
+                                         app=lan.this_program())]
+    card.pocket_on.setChecked(False)
+    card.pocket_on.setChecked(True)     # blocked: asking again can't help
+    assert len(firewall.asked) == 1
+    texts = " ".join(lb.text() for lb in card.findChildren(QLabel))
+    assert "Windows Firewall is blocking this app" in texts and "Python" not in texts

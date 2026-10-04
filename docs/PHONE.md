@@ -41,7 +41,9 @@ QR decoder reading the codes back.
   covers Private).
 - Following the PC's address when it changes while the app runs (a router restart):
   until then, untick and tick the box, or restart the app.
-- Pad pictures on the phone, and a home-screen icon.
+- Pad pictures on the phone (needs an endpoint that reads the pictures' files, so
+  the author's say-so first; the pads show their colour and name until then), and
+  an iPhone home-screen icon (iOS doesn't take an SVG one; the tab icon is SVG).
 - Removing it from Settings → Add-ons (that card only knows Onion Watch today).
 - The Linux port.
 
@@ -102,8 +104,10 @@ sound plays on the PC as if the pad had been clicked.
    random, last, category, volume, live. Mic, voice and replay stay loopback-only
    until we decide otherwise. A pad-picture endpoint can come later.
 7. **The page ships with the app.** It's a single HTML file with inline JS, no CDN,
-   and sent with `Content-Security-Policy: default-src 'self'`. Its icons are drawn
-   in SVG or CSS, so there are no third-party assets.
+   and sent with a hash-only `Content-Security-Policy` (`default-src 'none'`). Its
+   logo is Onion Board's mark as inline SVG and everything else is CSS, so there are
+   no third-party assets. `scripts/demo_page.py` serves it with made-up sounds for
+   working on its look.
 8. **Plain HTTP, no TLS, in v1.** On a LAN, TLS means a self-signed warning on every
    phone, or a custom CA, which iOS makes you install as a profile and then fully
    trust by hand ([Apple](https://support.apple.com/en-us/102390)). The comparable
@@ -115,7 +119,9 @@ sound plays on the PC as if the pad had been clicked.
    as a web app ([WebKit](https://webkit.org/blog/17333/webkit-features-in-safari-26-0/)).
    Doing the same over HTTP on Android Chrome is *unverified*.
 9. **Firewall (Windows).** When the box is ticked, add one inbound rule for
-   `OnionBoard.exe`: Private profile only, remote address *Local subnet*. This needs
+   `OnionBoard.exe`: Private profile only, remote address *Local subnet*. (Done:
+   a port part and a program part, `sys.executable`; a port-only rule doesn't stop
+   Windows' first-listen pop-up, which names the program by its version info.) This needs
    elevation: a UAC prompt, or the installer. Without a rule, Windows' first-listen
    prompt gives a non-admin user block rules whatever they click
    ([Microsoft](https://learn.microsoft.com/en-us/windows/security/operating-system-security/network-security/windows-firewall/rules)).

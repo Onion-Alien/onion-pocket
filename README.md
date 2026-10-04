@@ -1,13 +1,20 @@
-# Onion Pocket
+<p align="center">
+  <img src="docs/logo.svg" width="96" alt="">
+</p>
 
-**Your pads on your phone.** An add-on for [Onion Board](https://github.com/Onion-Alien/onion-board):
-scan a QR code on the PC, and your pads open in your phone's browser. Tap one and it
-plays on the PC, into Discord or your game like any pad. iPhone or Android, nothing
-to install on the phone.
+<h1 align="center">Onion Pocket</h1>
+
+<p align="center">
+  <b>Your pads on your phone.</b> An add-on for
+  <a href="https://github.com/Onion-Alien/onion-board">Onion Board</a>.<br>
+  Scan a QR code on the PC and tap a pad on your phone: it plays on the PC, into
+  Discord or your game like any pad.<br>
+  iPhone or Android, nothing to install on the phone.
+</p>
 
 | On the PC: Settings → Remote | On the phone |
 |---|---|
-| ![Onion Pocket's card on Settings → Remote, with the QR code](docs/screenshots/settings.png) | <img src="docs/screenshots/phone.png" width="300" alt="The phone page: pads by category, Stop all, Live / Muted, volume"> |
+| ![Onion Pocket's card on Settings → Remote, with the QR code](docs/screenshots/settings.png) | <img src="docs/screenshots/phone.png" width="300" alt="The phone page: Onion Board's logo, category chips, colourful pads (two playing, with a white ring and level bars), Stop all and the volume at the bottom"> |
 
 ## How it works
 
@@ -29,9 +36,10 @@ so the PC still does the playing ([docs/PHONE.md](docs/PHONE.md) has the researc
 - **Plain HTTP on your Wi-Fi.** Someone on the same network who can read its
   traffic could take the key and play your sounds. Use it at home, not on public
   Wi-Fi. [SECURITY.md](SECURITY.md) has the details.
-- **Phone can't connect?** *Let it through Windows Firewall* (Windows asks once),
-  and in Windows Settings → Network & internet → Wi-Fi, set your network to
-  *Private*.
+- **Phone can't connect?** When you tick *Let phones on this Wi-Fi use it*, Windows
+  asks once (its admin prompt) to let phones through the firewall: say yes. Said no?
+  Click *Let it through Windows Firewall*. And in Windows Settings → Network &
+  internet → Wi-Fi, set your network to *Private*.
 
 ## Install
 
@@ -59,6 +67,8 @@ To remove it, delete `%APPDATA%\OnionBoard\modules\onion-pocket`.
 | `tests/` | offscreen tests against a stand-in host (`tests/fakehost.py`) |
 | `app-side/` | the Onion Board change that hosts "remote" add-ons, as a patch, until it's merged |
 | `docs/PHONE.md` | the research (what phones can and can't do) and the design |
+| `scripts/demo_page.py` | the phone page in your browser with made-up sounds, no Onion Board needed; `--shot` remakes `docs/screenshots/phone.png` |
+| `.github/workflows/checks.yml` | on every push: the secrets / personal-data scan over the whole history, gitleaks, ruff and the tests |
 
 ## Developing
 
@@ -69,6 +79,10 @@ python -m venv .venv
 .venv\Scripts\python -m pytest
 git config core.hooksPath .githooks
 ```
+
+To work on the phone page's look: `.venv\Scripts\python scripts\demo_page.py` and open
+the link it prints, in your browser's phone view (F12, device toolbar). Nothing
+plays; it's the real page with a pretend board behind it.
 
 The add-on runs inside Onion Board, which has no pip: it may only import the
 standard library and PySide6 (`scripts/build_module.py` checks).
