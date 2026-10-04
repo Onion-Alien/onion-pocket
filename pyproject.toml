@@ -1,0 +1,30 @@
+[project]
+name = "onion-pocket"
+dynamic = ["version"]
+description = "Your pads on your phone: an Onion Board add-on"
+readme = "README.md"
+requires-python = ">=3.12"
+license = "LicenseRef-MIT-Commons-Clause"
+license-files = ["LICENSE"]
+
+[tool.setuptools.dynamic]
+version = { attr = "onion_pocket.__version__" }
+
+# ---------------------------------------------------------------- ruff
+[tool.ruff]
+line-length = 100
+
+[tool.ruff.lint]
+select = ["E", "W", "F", "B", "BLE", "UP"]
+ignore = [
+    "E731",   # lambda assignment: used deliberately for tiny local helpers
+    "B008",   # function call in default arg (Qt enums)
+]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/*" = ["BLE"]
+
+# ---------------------------------------------------------------- pytest
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"

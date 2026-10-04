@@ -1,0 +1,31 @@
+.venv/
+.venv-*/
+__pycache__/
+*.pyc
+build/
+dist/
+*.egg-info/
+.pytest_cache/
+.ruff_cache/
+
+# ---- never publish: secrets, personal data, local machine state (see CLAUDE.md)
+.sensitive-patterns
+.env
+.env.*
+*.pem
+*.key
+*.pfx
+*.token
+secrets.*
+credentials*.json
+*.log
+# Onion Board's app data copied in while debugging
+config.json
+config.json.*
+# editor / OS / tool state
+.vscode/
+.idea/
+Thumbs.db
+desktop.ini
+.DS_Store
+.claude/settings.local.json

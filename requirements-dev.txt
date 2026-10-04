@@ -1,0 +1,6 @@
+# What Onion Board ships that the add-on uses, plus the checks. The add-on itself
+# runs inside Onion Board and installs nothing.
+PySide6==6.11.2
+numpy==2.5.3
+pytest==9.1.1
+ruff==0.16.9
