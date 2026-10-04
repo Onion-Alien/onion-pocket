@@ -20,8 +20,9 @@ from __future__ import annotations
 
 import logging
 import sys
+import threading
 
-from PySide6.QtCore import Qt
+from PySide6.QtCore import QObject, Qt, Signal, Slot
 from PySide6.QtGui import QColor, QPainter, QPixmap
 from PySide6.QtWidgets import (QApplication, QCheckBox, QHBoxLayout, QLabel, QPushButton,
                                QSpinBox, QVBoxLayout)
@@ -60,10 +61,25 @@ def qr_pixmap(text: str, px: int = QR_PX) -> QPixmap:
     return pm
 
 
+class _Relay(QObject):
+    """Runs a function handed over from another thread on the UI thread."""
+    call = Signal(object)
+
+    def __init__(self):
+        super().__init__()
+        self.call.connect(self._run)
+
+    @Slot(object)
+    def _run(self, fn):
+        fn()
+
+
 class Pocket:
     def __init__(self, host):
         self.host = host
         self.server = host.server(ACTIONS, page.page(), "Onion Pocket")
+        self._relay = _Relay()
+        self.asking: threading.Thread | None = None   # waiting on Windows' admin prompt
         err = self.apply()
         if err:
             host.warn(f"Onion Pocket is off: {err}.")
@@ -192,6 +208,9 @@ class Pocket:
             code.setText("" if live else "Off")
             if not self.enabled:
                 state.setText("Off: phones can't reach Onion Board.")
+            elif self.asking is not None:   # Settings reopened while it's up
+                state.setText("Windows will ask once so phones can reach Onion Board: "
+                              "answer its prompt.")
             elif not live:
                 state.setText(f"Couldn't start: {err or self.server.error}")
             else:
@@ -204,21 +223,56 @@ class Pocket:
                              "Private next to it.")
                 state.setText(text)
 
+        def settle():
+            """Start or stop the server to match the settings, and show it (Settings
+            may have been closed meanwhile: the server still follows)."""
+            err = self.apply()
+            try:
+                refresh(err)
+            except RuntimeError:   # the card is gone
+                pass
+
         def ask_firewall():
-            """The rule, after one line saying why Windows is about to ask."""
+            """The rule, after one line saying why Windows is about to ask, then
+            settle(). Windows' prompt is waited for on a thread: on the UI thread the
+            whole of Onion Board froze ("Not responding") until it was answered, and a
+            prompt left behind another window looked like a hang."""
             if not windows:
+                settle()
                 return
-            state.setText("Windows will ask once so phones can reach Onion Board.")
-            state.repaint()   # before Windows' prompt takes the screen
-            ok = lan.allow_firewall(self.port, host=h)
-            h.flash(fw, "✓ Allowed" if ok else "Not changed")
+            if self.asking is not None:      # its prompt is already up
+                return
+            state.setText("Windows will ask once so phones can reach Onion Board: "
+                          "answer its prompt.")
+
+            def answered(ok: bool):
+                self.asking = None
+                try:
+                    h.flash(fw, "✓ Allowed" if ok else "Not changed")
+                except RuntimeError:   # the card is gone
+                    pass
+                settle()
+
+            def run():
+                ok = False
+                try:
+                    ok = lan.allow_firewall(self.port, host=h)
+                except Exception:  # noqa: BLE001 - never leave the card waiting
+                    log.warning("asking for the firewall rule failed", exc_info=True)
+                finally:
+                    self._relay.call.emit(lambda: answered(ok))
+            self.asking = threading.Thread(target=run, daemon=True,
+                                           name="onion-pocket-firewall")
+            self.asking.start()
 
         def set_on(b: bool):
             self._set(enabled=b)
             # before the server listens on the network: with our rule in place first,
-            # Windows has nothing to pop up about
-            if b and windows and lan.rule_state(self.port) in ("missing", "stale"):
+            # Windows has nothing to pop up about. It starts once the prompt's answered.
+            if b and windows and (self.asking is not None or
+                                  lan.rule_state(self.port) in ("missing", "stale")):
                 ask_firewall()
+                return
             refresh(self.apply())
 
         def set_port():
@@ -226,6 +280,7 @@ class Pocket:
                 self._set(port=port.value())
                 if windows and self.enabled and lan.rule_state(self.port) == "stale":
                     ask_firewall()   # the rule was for the old port: move it
+                    return
                 refresh(self.apply())
 
         def new_key():
@@ -239,7 +294,6 @@ class Pocket:
 
         def firewall():
             ask_firewall()
-            refresh(self.apply())
 
         on.toggled.connect(set_on)
         port.editingFinished.connect(set_port)

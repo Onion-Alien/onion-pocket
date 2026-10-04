@@ -1,9 +1,12 @@
 """The add-on against a stand-in host (tests/fakehost.py): off by default, its own
 key, starting only on a network, a hand-edited config, and its card on Settings."""
 import sys
+import threading
 
 import pytest
-from PySide6.QtWidgets import QCheckBox, QLabel, QPushButton, QSpinBox
+import shiboken6
+from PySide6.QtCore import QEvent
+from PySide6.QtWidgets import QApplication, QCheckBox, QLabel, QPushButton, QSpinBox
 
 from fakehost import FakeHost
 from onion_pocket import addon, lan, page
@@ -13,6 +16,16 @@ from onion_pocket.host import API_VERSION
 @pytest.fixture
 def host(qapp):
     return FakeHost()
+
+
+def answered(pocket):
+    """Wait for Windows' admin prompt (asked on a thread) to be answered and handled."""
+    t = pocket.asking
+    if t is not None:
+        t.join(5)
+        assert not t.is_alive(), "the firewall prompt never finished"
+    QApplication.processEvents()
+    assert pocket.asking is None
 
 
 def test_it_asks_for_a_short_list_and_serves_its_page(host):
@@ -68,6 +81,7 @@ def test_its_card_pairs_with_a_code_and_forgets_phones(host, monkeypatch):
     box = next(b for b in card.findChildren(QCheckBox))
     assert code.pixmap().isNull() and not box.isChecked()
     box.setChecked(True)
+    answered(pocket)
     assert pocket.enabled and pocket.server.running and not code.pixmap().isNull()
     old = pocket.token
     next(b for b in card.findChildren(QPushButton) if b.text() == "Forget phones").click()
@@ -83,6 +97,7 @@ def test_the_card_says_why_it_could_not_start(host, monkeypatch):
     pocket.server.refuse = "port 7475 is already in use — pick another"
     card = pocket.card()
     next(b for b in card.findChildren(QCheckBox)).setChecked(True)
+    answered(pocket)
     texts = " ".join(lb.text() for lb in card.findChildren(QLabel))
     assert "Couldn't start: port 7475 is already in use" in texts
 
@@ -115,11 +130,13 @@ def test_ticking_it_on_asks_windows_once_before_listening(host, firewall, monkey
         return True
     monkeypatch.setattr(lan, "_elevate", elevate)
     card.pocket_on.setChecked(True)
+    answered(pocket)
     assert len(said) == 1 and running_when_asked == [False]
     assert "Windows will ask once so phones can reach Onion Board" in said[0]
     assert pocket.server.running and "✓ Allowed" in host.flashed
     card.pocket_on.setChecked(False)
     card.pocket_on.setChecked(True)     # the rule is there now: no second prompt
+    answered(pocket)
     assert len(said) == 1
 
 
@@ -128,6 +145,7 @@ def test_saying_no_keeps_it_on_with_the_hint(host, firewall, monkeypatch):
     pocket = addon.create(host)
     card = pocket.card()
     card.pocket_on.setChecked(True)     # firewall.allow is False: the prompt turned down
+    answered(pocket)
     assert len(firewall.asked) == 1 and pocket.server.running
     assert "Not changed" in host.flashed
     texts = " ".join(lb.text() for lb in card.findChildren(QLabel))
@@ -160,11 +178,13 @@ def test_a_rule_for_the_old_port_or_copy_is_updated(host, firewall, monkeypatch)
     spin = next(s for s in card.findChildren(QSpinBox))
     spin.setValue(7476)
     spin.editingFinished.emit()
+    answered(pocket)
     assert firewall.asked == [f"/c {lan.firewall_command(7476, lan.this_program())}"]
     firewall.rules = ok_rule(7476)
     card.pocket_on.setChecked(False)
     monkeypatch.setattr(lan, "this_program", lambda: r"C:\Somewhere else\OnionBoard.exe")
     card.pocket_on.setChecked(True)     # the app moved: the rule is moved with it
+    answered(pocket)
     assert len(firewall.asked) == 2 and r'program="C:\Somewhere else' in firewall.asked[1]
 
 
@@ -175,6 +195,7 @@ def test_the_button_asks_too_and_a_block_is_explained(host, firewall, monkeypatc
     card = pocket.card()
     next(b for b in card.findChildren(QPushButton)
          if b.text().startswith("Let it through")).click()
+    answered(pocket)
     assert len(firewall.asked) == 1
     from test_lan import stored
     firewall.rules = ok_rule() + [stored(name="x", action="Block", port="",
@@ -194,6 +215,7 @@ def test_a_newer_onion_board_adds_the_rule_itself_so_its_prompt_names_it(host, f
     pocket = addon.create(host)
     card = pocket.card()
     card.pocket_on.setChecked(True)
+    answered(pocket)
     assert asked == [(lan.FIREWALL_RULE, 7475)] and firewall.asked == []   # no cmd.exe
     assert "✓ Allowed" in host.flashed
 
@@ -204,6 +226,56 @@ def test_onion_board_failing_to_add_the_rule_is_just_not_changed(host, firewall,
     def boom(name, port):
         raise OSError("no")
     host.allow_firewall = boom
-    card = addon.create(host).card()
+    pocket = addon.create(host)
+    card = pocket.card()
     card.pocket_on.setChecked(True)
+    answered(pocket)
     assert "Not changed" in host.flashed and firewall.asked == []
+
+
+def test_onion_board_keeps_running_while_windows_asks(host, firewall, monkeypatch):
+    """The prompt is waited for on a thread: on the UI thread, Onion Board froze until
+    it was answered."""
+    monkeypatch.setattr(lan, "lan_address", lambda: "pc.example")
+    up, answer = threading.Event(), threading.Event()
+
+    def elevate(params, wait_s=60.0):
+        up.set()
+        answer.wait(5)
+        firewall.rules = ok_rule()
+        return True
+    monkeypatch.setattr(lan, "_elevate", elevate)
+    pocket = addon.create(host)
+    card = pocket.card()
+    card.pocket_on.setChecked(True)     # returns at once, with the prompt still up
+    assert up.wait(5) and pocket.asking is not None and not pocket.server.running
+    texts = " ".join(lb.text() for lb in card.findChildren(QLabel))
+    assert "answer its prompt" in texts and "Couldn't start" not in texts
+    next(b for b in card.findChildren(QPushButton)
+         if b.text().startswith("Let it through")).click()   # no second prompt meanwhile
+    again = pocket.card()                # Settings reopened while it's up
+    texts = " ".join(lb.text() for lb in again.findChildren(QLabel))
+    assert "answer its prompt" in texts and "Couldn't start" not in texts
+    answer.set()
+    answered(pocket)
+    assert pocket.server.running and host.flashed.count("✓ Allowed") == 1
+
+
+def test_settings_closed_before_the_answer_still_starts_it(host, firewall, monkeypatch):
+    monkeypatch.setattr(lan, "lan_address", lambda: "pc.example")
+    answer = threading.Event()
+
+    def elevate(params, wait_s=60.0):
+        answer.wait(5)
+        return True
+    monkeypatch.setattr(lan, "_elevate", elevate)
+    monkeypatch.setattr(host, "flash", lambda button, text: button.objectName())
+    pocket = addon.create(host)
+    card = pocket.card()
+    card.pocket_on.setChecked(True)
+    card.deleteLater()                  # Settings closed
+    QApplication.sendPostedEvents(None, QEvent.DeferredDelete)
+    assert not shiboken6.isValid(card)
+    answer.set()
+    answered(pocket)
+    assert pocket.server.running
