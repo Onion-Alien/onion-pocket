@@ -199,7 +199,7 @@ class Pocket:
             """The rule, after one line saying why Windows is about to ask."""
             state.setText("Windows will ask once so phones can reach Onion Board.")
             state.repaint()   # before Windows' prompt takes the screen
-            ok = lan.allow_firewall(self.port)
+            ok = lan.allow_firewall(self.port, host=h)
             h.flash(fw, "✓ Allowed" if ok else "Not changed")
 
         def set_on(b: bool):

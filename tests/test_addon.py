@@ -165,3 +165,26 @@ def test_the_button_asks_too_and_a_block_is_explained(host, firewall, monkeypatc
     assert len(firewall.asked) == 1
     texts = " ".join(lb.text() for lb in card.findChildren(QLabel))
     assert "Windows Firewall is blocking this app" in texts and "Python" not in texts
+
+
+def test_a_newer_onion_board_adds_the_rule_itself_so_its_prompt_names_it(host, firewall,
+                                                                          monkeypatch):
+    monkeypatch.setattr(lan, "lan_address", lambda: "pc.example")
+    asked = []
+    host.allow_firewall = lambda name, port: asked.append((name, port)) or True
+    pocket = addon.create(host)
+    card = pocket.card()
+    card.pocket_on.setChecked(True)
+    assert asked == [(lan.FIREWALL_RULE, 7475)] and firewall.asked == []   # no cmd.exe
+    assert "✓ Allowed" in host.flashed
+
+
+def test_onion_board_failing_to_add_the_rule_is_just_not_changed(host, firewall, monkeypatch):
+    monkeypatch.setattr(lan, "lan_address", lambda: "pc.example")
+
+    def boom(name, port):
+        raise OSError("no")
+    host.allow_firewall = boom
+    card = addon.create(host).card()
+    card.pocket_on.setChecked(True)
+    assert "Not changed" in host.flashed and firewall.asked == []

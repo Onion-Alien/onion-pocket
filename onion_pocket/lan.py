@@ -209,13 +209,24 @@ def _elevate(params: str, wait_s: float = 60.0) -> bool:
         kernel32.CloseHandle(info.hProcess)
 
 
-def allow_firewall(port: int, program: str | None = None) -> bool:
+def allow_firewall(port: int, program: str | None = None, host=None) -> bool:
     """Ask Windows (its admin prompt) to let phones on the home network reach `port`,
     and this program listen without Windows' own prompt. Waits for the rule, so the
     server can start right after. True if allowed and added. Only ever called from a
-    click on the card."""
+    click on the card.
+
+    An Onion Board that offers `host.allow_firewall` adds the same rule itself, so the
+    prompt names Onion Board; older ones get cmd.exe's prompt ("Windows Command
+    Processor")."""
     if not _WINDOWS:
         return False
+    ask = getattr(host, "allow_firewall", None)
+    if ask is not None and program is None:
+        try:
+            return bool(ask(FIREWALL_RULE, int(port)))
+        except Exception:
+            log.warning("Onion Board couldn't add the firewall rule", exc_info=True)
+            return False
     program = program or this_program()
     if not quotable(program):
         log.info("the program's path can't go in a command: the port rule only")
