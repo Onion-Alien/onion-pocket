@@ -20,7 +20,7 @@ its own key, local-network peers only, wrong-key lock-out, a short action list, 
 hash-only CSP.
 
 Tested: this repo's tests (a stand-in host), Onion Board's tests with
-`app-side/` applied, the built zip installed into Onion Board and its card rendered,
+its side merged, the built zip installed into Onion Board and its card rendered,
 the page driven in headless Chromium at phone size against a real server, and a real
 QR decoder reading the codes back.
 
@@ -30,7 +30,7 @@ QR decoder reading the codes back.
 |---|---|
 | this repo, `onion_pocket/` | the add-on: its card, the phone page, QR codes, this PC's LAN address, the firewall rule. `host.py` is the whole contract with Onion Board |
 | this repo, `scripts/build_module.py` | `dist/OnionPocket-module.zip`, which Onion Board installs into `%APPDATA%\OnionBoard\modules\onion-pocket` |
-| Onion Board (`app-side/` until it's merged) | the "remote" add-on kind, the host (`soundboard/ui/remotehost.py`), the lan options of the control API server, its card on Settings → Remote |
+| Onion Board (newer than 1.6.8) | the "remote" add-on kind, the host (`soundboard/ui/remotehost.py`), the lan options of the control API server, its card on Settings → Remote |
 
 **Not done yet:**
 - Tried on a real phone and a real Windows PC (firewall prompt, Private / Public

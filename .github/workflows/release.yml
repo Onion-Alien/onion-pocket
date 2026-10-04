@@ -1,0 +1,38 @@
+name: release
+
+# Push a tag like v0.1.0 (matching onion_pocket.__version__) and this builds the add-on
+# zip and publishes it on a GitHub release. Onion Board's *Get Onion Pocket* takes the
+# newest release's OnionPocket-module.zip, and only if it matches the SHA-256 GitHub
+# lists for it.
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.13"
+      - run: pip install -r requirements-dev.txt
+      - run: ruff check .
+      - run: python -m pytest
+        env:
+          QT_QPA_PLATFORM: offscreen
+      - name: The tag matches the add-on's version
+        shell: bash
+        run: |
+          ver=$(python -c "import onion_pocket; print(onion_pocket.__version__)")
+          test "v$ver" = "$GITHUB_REF_NAME" || { echo "tag $GITHUB_REF_NAME, version $ver"; exit 1; }
+      - name: Build the add-on
+        run: python scripts/build_module.py
+      - name: Publish the release
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release create "$GITHUB_REF_NAME" dist/OnionPocket-module.zip --title "Onion Pocket ${GITHUB_REF_NAME#v}" --notes-file docs/RELEASE-NOTES.md

@@ -43,15 +43,23 @@ so the PC still does the playing ([docs/PHONE.md](docs/PHONE.md) has the researc
 
 ## Install
 
-It needs an Onion Board that hosts "remote" add-ons (the change in
-[`app-side/`](app-side/), not in a release yet).
+In Onion Board (newer than 1.6.8): **Settings → Remote → *Get Onion Pocket***. It
+downloads this project's latest release from GitHub, checks it against the SHA-256
+GitHub lists for it, and installs it; its card then takes that button's place. If it
+can't be downloaded, the button just goes away and Onion Board carries on as before.
 
-1. `python scripts/build_module.py` → `dist/OnionPocket-module.zip`
-2. Unzip it into `%APPDATA%\OnionBoard\modules\` (you get
-   `modules\onion-pocket\module.json`), then restart Onion Board.
-3. Settings → Remote → *Onion Pocket*.
+To try a build of your own instead: `python scripts/build_module.py` →
+`dist/OnionPocket-module.zip`, then either start Onion Board with
+`ONIONBOARD_ONION_POCKET_ZIP` set to that zip and click *Get Onion Pocket*, or unzip it
+into `%APPDATA%\OnionBoard\modules\` and restart Onion Board.
 
 To remove it, delete `%APPDATA%\OnionBoard\modules\onion-pocket`.
+
+## Releasing
+
+Raise `__version__` in `onion_pocket/__init__.py`, update `docs/RELEASE-NOTES.md`,
+and push a matching tag (`v0.1.0`). `.github/workflows/release.yml` runs the checks,
+builds the zip and publishes the release Onion Board downloads from.
 
 ## Code
 
@@ -65,10 +73,10 @@ To remove it, delete `%APPDATA%\OnionBoard\modules\onion-pocket`.
 | `scripts/build_module.py` | the add-on zip Onion Board installs; refuses imports Onion Board doesn't ship |
 | `scripts/check_sensitive.py` | secrets / personal-data scan, also the pre-commit hook |
 | `tests/` | offscreen tests against a stand-in host (`tests/fakehost.py`) |
-| `app-side/` | the Onion Board change that hosts "remote" add-ons, as a patch, until it's merged |
 | `docs/PHONE.md` | the research (what phones can and can't do) and the design |
 | `scripts/demo_page.py` | the phone page in your browser with made-up sounds, no Onion Board needed; `--shot` remakes `docs/screenshots/phone.png` |
 | `.github/workflows/checks.yml` | on every push: the secrets / personal-data scan over the whole history, gitleaks, ruff and the tests |
+| `.github/workflows/release.yml` | on a `v*` tag: the checks, then the add-on zip published as a GitHub release |
 
 ## Developing
 
