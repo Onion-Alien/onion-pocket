@@ -185,7 +185,9 @@ class Pocket:
         forget.setToolTip("Make a new key: every paired phone has to scan the new code")
         btns.addWidget(forget)
         side.addLayout(btns)
-        fw = QPushButton("Let it through Windows Firewall…")
+        # the card's from the start: `side` isn't on a widget yet, so a parentless button
+        # shown here flashed up on the desktop as a little window of its own
+        fw = QPushButton("Let it through Windows Firewall…", card)
         fw.setToolTip("Windows asks for permission once. The rule only lets in phones on "
                       "this network, only on a network Windows calls Private, and stops "
                       "Windows' own pop-up about this app")
