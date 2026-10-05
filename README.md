@@ -9,12 +9,33 @@
   <a href="https://github.com/Onion-Alien/onion-board">Onion Board</a>.<br>
   Scan a QR code on the PC and tap a pad on your phone: it plays on the PC, into
   Discord or your game like any pad.<br>
+  Run the radio and change the speed, pitch, bass and effects from your phone too.<br>
   iPhone or Android, nothing to install on the phone.
 </p>
 
 | On the PC: Settings → Remote | On the phone |
 |---|---|
-| ![Onion Pocket's card on Settings → Remote, with the QR code](docs/screenshots/settings.png) | <img src="docs/screenshots/phone.png" width="300" alt="The phone page: Onion Board's logo, category chips, colourful pads (two playing, with a white ring and level bars), Stop all and the volume at the bottom"> |
+| ![Onion Pocket's card on Settings → Remote, with the QR code](docs/screenshots/settings.png) | <img src="docs/screenshots/phone.png" width="300" alt="The phone page: Onion Board's logo, category chips, colourful pads (two playing, with a white ring and level bars), Stop all and the volume, and the Pads, Radio and Sound tabs at the bottom"> |
+
+| Radio | Sound |
+|---|---|
+| <img src="docs/screenshots/radio.png" width="300" alt="The Radio tab: the station playing with Random, Star, Live and Hear it myself, your Favorites, Recent and Popular stations, a search box, and Stop radio with the radio's volume"> | <img src="docs/screenshots/sound.png" width="300" alt="The Sound tab: speed slider with quick speeds, keep pitch, pitch, and the effects (bass, treble, muffle, reverb, echo, distortion) with Reset all"> |
+
+## What your phone can do
+
+- **Pads:** tap to play, by category or search, *Stop all*, the volume, and
+  *Live / Muted* (mute you for everyone).
+- **Radio:** play and stop the radio, your *Favorites*, *Recent* and *Popular*
+  stations or a search, a random station, star a station, *Live* (others hear the
+  radio) or *Only me*, *Hear it myself*, and the radio's volume.
+- **Sound:** the live speed (with the 0.5x–2x quick speeds) and pitch, *Keep pitch*,
+  bass, treble, muffle, reverb, echo and distortion, the presets (*Bass boosted*,
+  *Underwater*, *Phone call*…), *Reset all*, and *Who's listening* (Discord, Steam
+  voice, Vivox…).
+
+Whatever the phone changes moves on the PC too: the same sliders and buttons. The
+Radio and Sound tabs need Onion Board 1.7.2 or newer; with an older one the phone
+shows the pads.
 
 ## How it works
 
@@ -30,9 +51,9 @@ so the PC still does the playing ([docs/PHONE.md](docs/PHONE.md) has the researc
   with its own key (in the QR code; separate from the Stream Deck key). *Forget
   phones* makes a new key. An address that gets the key wrong 5 times is ignored
   for a minute.
-- **Never your mic.** A phone can play, stop and pause sounds, change the volume
-  and category, and mute you (*Live / Muted*). Never the mic, the voice changer
-  or the instant replay.
+- **Never your mic.** A phone can play your pads, run the radio and change the live
+  speed, pitch and effects (the list above). Never the mic, the voice changer, the
+  instant replay, or anything that reads or saves files.
 - **Plain HTTP on your Wi-Fi.** Someone on the same network who can read its
   traffic could take the key and play your sounds. Use it at home, not on public
   Wi-Fi. [SECURITY.md](SECURITY.md) has the details.

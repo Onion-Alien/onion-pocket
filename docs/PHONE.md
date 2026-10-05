@@ -15,7 +15,9 @@ confirm from an official page are marked *unverified*.
 **Built: Onion Pocket, an Onion Board add-on (this repo).** It lives entirely on
 Settings → Remote: *Let phones on this Wi-Fi use it*, the QR code, *Copy the link*,
 *Forget phones*, *Let it through Windows Firewall*, the port. The phone page has pads
-by category, *Stop all*, *Live / Muted* and the volume. It follows the design below:
+by category, *Stop all*, *Live / Muted* and the volume, and (0.2.0, with Onion
+Board 1.7.2+) a Radio tab and a Sound tab for the live speed, pitch, effects and
+who's listening. It follows the design below:
 its own key, local-network peers only, wrong-key lock-out, a short action list, a
 hash-only CSP.
 
@@ -101,7 +103,8 @@ sound plays on the PC as if the pad had been clicked.
 5. **Host check** as today, but for the bound LAN address. Requests for any other
    `Host` are refused, so DNS rebinding still fails. No CORS headers.
 6. **A smaller set of endpoints:** status, sounds, categories, play, stop, pause,
-   random, last, category, volume, live. Mic, voice and replay stay loopback-only
+   random, last, category, volume, live; since 0.2.0 also speed, pitch, effects,
+   reset, mode and the radio's. Mic, voice and replay stay loopback-only
    until we decide otherwise. A pad-picture endpoint can come later.
 7. **The page ships with the app.** It's a single HTML file with inline JS, no CDN,
    and sent with a hash-only `Content-Security-Policy` (`default-src 'none'`). Its

@@ -11,7 +11,10 @@ from PySide6.QtWidgets import QFrame, QHBoxLayout, QLabel, QVBoxLayout
 from onion_pocket.host import API_VERSION
 
 ACTIONS = ("status", "sounds", "categories", "play", "stop", "pause", "random", "last",
-           "category", "volume", "live", "voice", "mic", "replay", "help")
+           "category", "volume", "live", "voice", "mic", "replay", "speed", "pitch",
+           "effects", "reset", "mode", "stations", "radio", "radio_random", "radio_star",
+           "radio_live", "radio_hear", "radio_volume", "help")
+OLD_ACTIONS = ACTIONS[:ACTIONS.index("replay") + 1] + ("help",)   # Onion Board 1.7.1
 
 
 class FakeServer:
@@ -48,7 +51,7 @@ class FakeHost:
         self.saves += 1
 
     def server(self, actions, page=None, name=""):
-        unknown = set(actions) - set(ACTIONS)
+        unknown = set(actions) - set(self.actions)
         if unknown:
             raise ValueError(f"no such actions: {sorted(unknown)}")
         s = FakeServer(actions, page, name)

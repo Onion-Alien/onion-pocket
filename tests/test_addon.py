@@ -38,6 +38,16 @@ def test_it_asks_for_a_short_list_and_serves_its_page(host):
     assert pocket.host is host and API_VERSION == host.api_version
 
 
+def test_an_older_board_gets_only_the_actions_it_has(host):
+    """Onion Board 1.7.1 has no speed, radio…: the add-on still loads, with the pads."""
+    from fakehost import OLD_ACTIONS
+    host.actions = OLD_ACTIONS
+    addon.create(host)
+    srv, = host.servers
+    assert srv.actions == tuple(a for a in addon.ACTIONS if a in OLD_ACTIONS)
+    assert "play" in srv.actions and "radio" not in srv.actions and "speed" not in srv.actions
+
+
 def test_it_starts_only_when_on_and_on_a_network(host, monkeypatch):
     pocket = addon.create(host)
     host.settings.update(enabled=True, port=0)

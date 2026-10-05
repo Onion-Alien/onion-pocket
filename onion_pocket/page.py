@@ -3,6 +3,10 @@ script inline, served by the app at / on the home network. No CDN, no fonts, no
 picture files: the logo is inline SVG (the same mark as Onion Board's icon) and
 the pads are CSS in each pad's own colour.
 
+Three tabs along the bottom: Pads, Radio (the Radio tab's stations and controls) and
+Sound (the live speed, pitch and effects, and who's listening). A tab shows only when
+the board's status says it has that part, so an older Onion Board gets the pads alone.
+
 The key arrives in the link's #fragment (browsers never send that part), is kept in
 the phone's localStorage and taken out of the address bar, and goes with every
 request as X-Token. Sound names are put on the page as text, never as markup. The
@@ -68,6 +72,7 @@ button { font:inherit; color:var(--text); background:var(--panel2); border:0;
   transition:transform .08s ease, filter .15s ease, background .2s ease; }
 button:active { transform:scale(.96); filter:brightness(1.25); }
 button:focus-visible { outline:2px solid var(--text); outline-offset:2px; }
+button:disabled { opacity:.45; cursor:default; }
 
 header { position:sticky; top:0; z-index:3; padding:14px 16px 6px;
   background:linear-gradient(var(--bg) 70%, #0f0d1700);
@@ -150,7 +155,7 @@ main { display:grid; grid-template-columns:repeat(auto-fill, minmax(102px, 1fr))
 
 .dock { position:fixed; left:0; right:0; bottom:0; z-index:4;
   padding:10px 16px calc(10px + var(--safe-b)); display:flex; gap:10px;
-  background:#16131fd9; -webkit-backdrop-filter:blur(16px); backdrop-filter:blur(16px);
+  background:#16131ff2; -webkit-backdrop-filter:blur(16px); backdrop-filter:blur(16px);
   border-top:1px solid var(--line); }
 #stop { flex:1; display:flex; align-items:center; justify-content:center; gap:9px;
   font-weight:700; min-height:50px; border-radius:14px;
@@ -166,6 +171,102 @@ main { display:grid; grid-template-columns:repeat(auto-fill, minmax(102px, 1fr))
   overflow:hidden; }
 #volbar { display:block; height:100%; width:0; border-radius:2px;
   background:linear-gradient(90deg, var(--accent), var(--pink)); transition:width .2s; }
+
+[hidden] { display:none !important; }
+body.tabbed main, .view { padding-bottom:calc(172px + var(--safe-b)); }
+.dock { flex-direction:column; gap:10px; }
+.row { display:flex; gap:10px; }
+.vlabel { display:block; font-size:10.5px; color:var(--dim); text-transform:uppercase;
+  letter-spacing:.6px; }
+#ract, #reset { flex:1; font-weight:700; min-height:50px; border-radius:14px;
+  background:linear-gradient(135deg, var(--accent), #9b6bff); box-shadow:0 6px 18px #7c5cff44; }
+#ract.on { background:linear-gradient(135deg, #ff4d6d, #ff4d8d); box-shadow:0 6px 18px #ff4d6d44; }
+#reset { background:var(--panel2); box-shadow:inset 0 0 0 1px var(--line); }
+.tabs { display:flex; gap:6px; margin:0 -6px; }
+.tab { flex:1; display:flex; flex-direction:column; align-items:center; gap:3px;
+  min-height:48px; padding:6px 4px; background:transparent; color:var(--dim);
+  font-size:12px; font-weight:600; border-radius:12px; }
+.tab svg { width:22px; height:22px; fill:none; stroke:currentColor; stroke-width:2;
+  stroke-linecap:round; stroke-linejoin:round; }
+.tab.sel { color:#fff; background:#7c5cff2e; }
+.tab.sel svg { stroke:#b9a6ff; }
+
+.view { padding-left:16px; padding-right:16px; padding-top:6px; }
+.card { background:var(--panel); border-radius:18px; padding:14px;
+  box-shadow:inset 0 0 0 1px var(--line); margin-bottom:12px; }
+.head { display:flex; align-items:baseline; justify-content:space-between; gap:10px;
+  margin-bottom:8px; }
+h2 { margin:0; font-size:13px; font-weight:700; color:var(--dim); text-transform:uppercase;
+  letter-spacing:.7px; }
+.val { font-weight:800; font-size:22px; font-variant-numeric:tabular-nums; }
+.val.hot { color:var(--warn); }
+input[type=range] { -webkit-appearance:none; appearance:none; width:100%; height:34px;
+  background:transparent; margin:0; touch-action:pan-y; }
+input[type=range]::-webkit-slider-runnable-track { height:6px; border-radius:3px;
+  background:linear-gradient(90deg, var(--accent), var(--pink)); }
+input[type=range]::-moz-range-track { height:6px; border-radius:3px;
+  background:linear-gradient(90deg, var(--accent), var(--pink)); }
+input[type=range]::-webkit-slider-thumb { -webkit-appearance:none; width:26px; height:26px;
+  margin-top:-10px; border-radius:50%; background:#fff; box-shadow:0 2px 8px #0008; }
+input[type=range]::-moz-range-thumb { width:26px; height:26px; border:0; border-radius:50%;
+  background:#fff; box-shadow:0 2px 8px #0008; }
+.quick { display:flex; gap:6px; margin-top:6px; }
+.quick button { flex:1; padding:6px 0; min-height:38px; font-size:13.5px;
+  background:var(--panel2); }
+.quick button.sel, .chip.sel { color:#fff; background:linear-gradient(135deg, var(--accent),
+  #9b6bff); box-shadow:0 4px 14px #7c5cff55; }
+.step { display:flex; align-items:center; gap:10px; }
+.step button { width:46px; flex:none; font-size:22px; padding:0; }
+.switch { display:flex; align-items:center; justify-content:space-between; gap:12px;
+  width:100%; margin-top:10px; padding:10px 12px; text-align:left; background:var(--panel2); }
+.switch::after { content:""; flex:none; width:42px; height:24px; border-radius:12px;
+  background:#ffffff22; box-shadow:inset 0 0 0 1px var(--line);
+  transition:background .2s; }
+.switch[aria-pressed=true]::after { background:var(--ok); }
+.fx { display:grid; grid-template-columns:78px 1fr 58px; align-items:center; gap:4px 10px; }
+.fx label { color:var(--dim); font-size:14px; }
+.fx output { text-align:right; font-weight:700; font-variant-numeric:tabular-nums;
+  font-size:14px; }
+.wrap { flex-wrap:wrap; overflow:visible; padding-bottom:0; }
+select { width:100%; font:inherit; color:var(--text); background:var(--panel2);
+  border:1px solid var(--line); border-radius:12px; padding:10px 12px; min-height:46px; }
+.hint { color:var(--dim); font-size:13px; margin:8px 2px 0; }
+
+.now { display:flex; flex-direction:column; gap:10px; }
+.kicker { font-size:12px; color:var(--dim); text-transform:uppercase; letter-spacing:.7px; }
+.kicker.on { color:var(--ok); }
+#rname { display:block; font-size:19px; line-height:1.25; word-break:break-word; }
+#rsub { display:block; color:var(--dim); font-size:13.5px; word-break:break-word; }
+.now .row button { flex:1; }
+#rstar.fav { color:var(--warn); }
+.toggle[aria-pressed=true] { color:var(--ok); background:#19d27a1f;
+  box-shadow:inset 0 0 0 1.5px #19d27a66; }
+.seg { display:flex; gap:4px; padding:4px; border-radius:14px; background:var(--panel);
+  box-shadow:inset 0 0 0 1px var(--line); margin-bottom:10px; }
+.seg button { flex:1; min-height:38px; padding:6px 4px; font-size:13.5px;
+  background:transparent; color:var(--dim); font-weight:600; }
+.seg button.sel { color:#fff; background:linear-gradient(135deg, var(--accent), #9b6bff); }
+#rfind { width:100%; font:inherit; color:var(--text); background:var(--panel);
+  border:1px solid var(--line); border-radius:12px; padding:9px 12px; min-height:42px;
+  margin-bottom:10px; -webkit-user-select:text; user-select:text; }
+#rfind::placeholder { color:var(--dim); }
+.stations { list-style:none; margin:0; padding:0; display:flex; flex-direction:column;
+  gap:8px; }
+.stations li { display:flex; gap:6px; }
+.st { flex:1; min-width:0; display:flex; flex-direction:column; align-items:flex-start;
+  text-align:left; gap:2px; background:var(--panel); padding:10px 12px;
+  box-shadow:inset 0 0 0 1px var(--line); }
+.st b { font-weight:650; max-width:100%; overflow:hidden; text-overflow:ellipsis;
+  white-space:nowrap; }
+.st span { color:var(--dim); font-size:12.5px; max-width:100%; overflow:hidden;
+  text-overflow:ellipsis; white-space:nowrap; }
+.st.playing { box-shadow:0 0 0 2px var(--ok); background:#19d27a14; }
+.st.playing b::before { content:"\\25B6\\FE0E  "; color:var(--ok); }
+.star { width:48px; flex:none; font-size:20px; padding:0; background:var(--panel);
+  color:var(--dim); box-shadow:inset 0 0 0 1px var(--line); }
+.star.fav { color:var(--warn); }
+.note { color:var(--dim); font-size:13px; margin:0 2px 8px; }
+.note:empty { display:none; }
 
 @keyframes eq { 0%, 100% { height:30%; } 50% { height:100%; } }
 @keyframes hit { from { opacity:.35; } to { opacity:0; } }
@@ -183,6 +284,10 @@ SCRIPT = """
 const $ = (id) => document.getElementById(id);
 let key = "", sounds = [], cats = [], cat = "", query = "";
 let playing = new Set(), timer = 0;
+let view = "pads", st = {}, knobs = null, modes = null;
+let rlist = "", rquery = "", rpoll = 0, rtries = 0, rtimer = 0;
+const held = {};       // control id -> until when the status mustn't move it (a thumb on it)
+const QUICK = [0.5, 0.75, 1, 1.25, 1.5, 2];
 
 function store(k) { try { k ? localStorage.setItem("ob-key", k)
                             : localStorage.removeItem("ob-key"); } catch (e) {} }
@@ -219,8 +324,22 @@ async function api(path) {
   return body;
 }
 
+// Slider moves go one after another, so the last one sent is the one that stays.
+let chain = Promise.resolve();
+function send(path) {
+  const p = chain.then(() => api(path));
+  chain = p.catch(() => {});
+  return p;
+}
+function hold(id, ms) { held[id] = Date.now() + (ms || 1500); }
+function free(id) { return !(held[id] > Date.now()); }
+function press(el, on) { el.setAttribute("aria-pressed", on ? "true" : "false"); }
+function num(v, d) { const n = Number(v); return Number.isFinite(n) ? n : d; }
+function q(v) { return encodeURIComponent(v); }
+
 function color(c) { return /^#[0-9a-fA-F]{3,8}$/.test(c || "") ? c : ""; }
 
+// ------------------------------------------------------------------ pads
 function drawChips() {
   const box = $("chips");
   box.replaceChildren();
@@ -259,13 +378,13 @@ function drawPads() {
       "with this phone's camera."));
     return;
   }
-  const q = query.trim().toLowerCase();
+  const qy = query.trim().toLowerCase();
   const shown = sounds.filter((s) => (!cat || (s.categories || []).includes(cat))
-                                     && (!q || (s.name || "").toLowerCase().includes(q)));
+                                     && (!qy || (s.name || "").toLowerCase().includes(qy)));
   if (!shown.length) {
     grid.appendChild(sounds.length
-      ? emptyCard("\\u{1F50D}", "Nothing here", q ? "No sound matches that search."
-                                                  : "No sounds in this category.")
+      ? emptyCard("\\u{1F50D}", "Nothing here", qy ? "No sound matches that search."
+                                                   : "No sounds in this category.")
       : emptyCard("\\u{1F3B5}", "No sounds yet", "Add some in Onion Board on the PC."));
     return;
   }
@@ -299,22 +418,325 @@ async function play(id, b) {
   if (navigator.vibrate) { navigator.vibrate(12); }
   b.classList.remove("hit"); void b.offsetWidth; b.classList.add("hit");
   try {
-    await api("play?id=" + encodeURIComponent(id));
+    await api("play?id=" + q(id));
     say(""); playing.add(id); markPlaying();
   } catch (e) {}
 }
 
+// ------------------------------------------------------------------ tabs
+function hasRadio() { return !!st.radio; }
+function hasSound() { return st.speed !== undefined; }
+
+function drawTabs() {
+  const radio = hasRadio(), sound = hasSound();
+  $("tab-radio").hidden = !radio;
+  $("tab-sound").hidden = !sound;
+  $("tabs").hidden = !radio && !sound;
+  document.body.classList.toggle("tabbed", radio || sound);
+  if ((view === "radio" && !radio) || (view === "sound" && !sound)) { show("pads"); }
+}
+
+function show(v) {
+  view = v;
+  for (const name of ["pads", "radio", "sound"]) {
+    $("tab-" + name).classList.toggle("sel", name === v);
+    $("tab-" + name).setAttribute("aria-selected", name === v ? "true" : "false");
+  }
+  $("pads").hidden = v !== "pads";
+  $("padhead").hidden = v !== "pads";
+  $("radio").hidden = v !== "radio";
+  $("sound").hidden = v !== "sound";
+  $("stop").hidden = v !== "pads";
+  $("ract").hidden = v !== "radio";
+  $("reset").hidden = v !== "sound";
+  $("vlabel").textContent = v === "radio" ? "Radio" : "Sounds";
+  drawVolume();
+  if (v === "radio") { loadStations(); }
+  if (v === "sound") { loadSound(); }
+  window.scrollTo(0, 0);
+}
+
+function drawVolume() {
+  const r = st.radio || {};
+  const v = Math.max(0, Math.min(100, num(view === "radio" ? r.volume : st.volume, 0)));
+  $("vol").textContent = v + "%";
+  $("volbar").style.width = Math.min(100, v) + "%";
+}
+
+// ------------------------------------------------------------------ sound: speed, pitch, effects
+function fmtX(v) { return +num(v, 1).toFixed(2) + "x"; }
+function fmtSt(v) { v = Math.round(num(v, 0)); return (v > 0 ? "+" : "") + v + " st"; }
+function fmtFx(k, v) {
+  v = num(v, 0);
+  if (k.unit === "dB") { v = Math.round(v); return (v > 0 ? "+" : "") + v + " dB"; }
+  return Math.round(v * 100) + "%";
+}
+
+function slider(el, sendIt, label) {
+  let t = 0, last = 0;
+  const go = () => { last = Date.now(); sendIt(el.value); };
+  el.addEventListener("input", () => {
+    hold(el.id);
+    if (label) { label(el.value); }
+    clearTimeout(t);
+    const wait = 200 - (Date.now() - last);
+    if (wait <= 0) { go(); } else { t = setTimeout(go, wait); }
+  });
+  el.addEventListener("change", () => { hold(el.id); clearTimeout(t); go(); });
+}
+
+function liveSend(path) { return send(path).then(drawLive, () => {}); }
+
+function buildSound() {
+  const quick = $("quick");
+  for (const s of QUICK) {
+    const b = document.createElement("button");
+    b.textContent = s + "x";
+    b.dataset.v = String(s);
+    b.addEventListener("click", () => { $("speed").value = s; liveSend("speed?set=" + s); });
+    quick.appendChild(b);
+  }
+  slider($("speed"), (v) => liveSend("speed?set=" + v),
+         (v) => { $("speedv").textContent = fmtX(v); });
+  slider($("pitch"), (v) => liveSend("pitch?set=" + v),
+         (v) => { $("pitchv").textContent = fmtSt(v); });
+  $("pdown").addEventListener("click", () => liveSend("pitch?step=down"));
+  $("pup").addEventListener("click", () => liveSend("pitch?step=up"));
+  $("keep").addEventListener("click", () => liveSend("speed?keep=toggle"));
+  $("reset").addEventListener("click", () => liveSend("reset"));
+  $("mode").addEventListener("change", (e) => {
+    hold("mode", 3000);
+    send("mode?set=" + q(e.target.value)).then(drawModes, () => {});
+  });
+}
+
+async function loadSound() {
+  if (!knobs) {
+    try {
+      const fx = await api("effects");
+      knobs = fx.knobs || []; buildFx(fx.presets || []); drawLive(fx);
+    } catch (e) {}
+  }
+  if (!modes && st.mode !== undefined) {
+    try { drawModes(await api("mode")); } catch (e) {}
+  }
+}
+
+function buildFx(presets) {
+  const box = $("fx");
+  box.replaceChildren();
+  for (const k of knobs) {
+    const id = "fx-" + k.key;
+    const lab = document.createElement("label");
+    lab.textContent = k.label; lab.htmlFor = id;
+    const r = document.createElement("input");
+    r.type = "range"; r.id = id; r.min = k.lo; r.max = k.hi;
+    r.step = k.unit === "dB" ? 1 : 0.05; r.value = 0;
+    const out = document.createElement("output");
+    out.id = id + "-v"; out.textContent = fmtFx(k, 0);
+    slider(r, (v) => liveSend("effects?" + q(k.key) + "=" + v),
+           (v) => { out.textContent = fmtFx(k, v); });
+    box.append(lab, r, out);
+  }
+  const pb = $("presets");
+  pb.replaceChildren();
+  for (const name of presets) {
+    const b = document.createElement("button");
+    b.className = "chip"; b.textContent = name; b.dataset.name = name;
+    b.addEventListener("click", () =>
+      liveSend("effects?preset=" + q(b.classList.contains("sel") ? "none" : name)));
+    pb.appendChild(b);
+  }
+}
+
+function drawLive(s) {
+  if (!s || s.speed === undefined) { return; }
+  const speed = num(s.speed, 1), pitch = num(s.pitch, 0);
+  if (free("speed")) {
+    $("speed").value = speed;
+    $("speedv").textContent = fmtX(speed);
+    $("speedv").classList.toggle("hot", speed > 2.0001);
+  }
+  for (const b of $("quick").children) {
+    b.classList.toggle("sel", Math.abs(num(b.dataset.v, 0) - speed) < 0.001);
+  }
+  if (free("pitch")) {
+    $("pitch").value = pitch;
+    $("pitchv").textContent = fmtSt(pitch);
+    $("pitchv").classList.toggle("hot", Math.abs(pitch) > 12);
+  }
+  press($("keep"), !!s.keep_pitch);
+  const fx = s.effects || {};
+  for (const k of knobs || []) {
+    const id = "fx-" + k.key, el = $(id);
+    if (el && free(id)) {
+      el.value = num(fx[k.key], 0);
+      $(id + "-v").textContent = fmtFx(k, fx[k.key]);
+    }
+  }
+  for (const b of $("presets").children) {
+    b.classList.toggle("sel", b.dataset.name === s.preset);
+  }
+}
+
+function drawModes(m) {
+  if (!m || !m.modes) { return; }
+  modes = m.modes;
+  const sel = $("mode");
+  sel.replaceChildren();
+  for (const d of modes) {
+    const o = document.createElement("option");
+    o.value = d.key;
+    o.textContent = d.key === "off" ? "Off" : d.label;
+    sel.appendChild(o);
+  }
+  drawMode(m.mode);
+}
+
+function drawMode(key) {
+  if (!modes || key === undefined) { return; }
+  if (!modes.some((d) => d.key === key)) { modes = null; loadSound(); return; }   // a new one
+  if (free("mode")) { $("mode").value = key; }
+  const d = modes.find((x) => x.key === $("mode").value);
+  $("modenote").textContent = d ? d.note || "" : "";
+}
+
+// ------------------------------------------------------------------ radio
+function drawRadio(r) {
+  if (!r) { return; }
+  $("roff").hidden = r.available !== false;
+  $("ron").hidden = r.available === false;
+  $("ract").disabled = r.available === false || (!r.on && !r.last);
+  if (r.available === false) { return; }
+  const s = r.station;
+  $("rstate").textContent = r.connecting ? "Tuning in…" : r.on ? "Playing" : "Radio";
+  $("rstate").className = "kicker" + (r.on && !r.connecting ? " on" : "");
+  $("rname").textContent = s ? s.name : "Nothing playing";
+  $("rsub").textContent = s ? (r.title || [s.country, ...(s.tags || [])].filter(Boolean)
+                                                                        .join(" · "))
+                            : "Pick a station below.";
+  $("ract").textContent = r.on ? "Stop radio" : "Play radio";
+  $("ract").classList.toggle("on", !!r.on);
+  $("rstar").disabled = !s;
+  $("rstar").textContent = s && s.fav ? "★ Starred" : "☆ Star";
+  $("rstar").classList.toggle("fav", !!(s && s.fav));
+  press($("rlive"), !!r.live);
+  $("rlive").textContent = r.live ? "Live: others hear it" : "Only me";
+  press($("rhear"), !!r.hear);
+  const now = s ? s.id : "";
+  for (const b of document.querySelectorAll(".st")) {
+    b.classList.toggle("playing", b.dataset.id === now);
+  }
+}
+
+function radioSend(path) {
+  return send(path).then((r) => { st.radio = r; drawRadio(r); drawVolume(); }, () => {});
+}
+
+function stationRow(s) {
+  const li = document.createElement("li");
+  const b = document.createElement("button");
+  b.className = "st" + (s.playing ? " playing" : "");
+  b.dataset.id = s.id;
+  const n = document.createElement("b");
+  n.textContent = s.name;
+  const sub = document.createElement("span");
+  sub.textContent = [s.country, ...(s.tags || [])].filter(Boolean).join(" · ") || " ";
+  b.append(n, sub);
+  b.addEventListener("click", () => {
+    if (navigator.vibrate) { navigator.vibrate(12); }
+    radioSend("radio?id=" + q(s.id));
+  });
+  const star = document.createElement("button");
+  star.className = "star" + (s.fav ? " fav" : "");
+  star.textContent = s.fav ? "★" : "☆";
+  star.setAttribute("aria-label", s.fav ? "Unstar " + s.name : "Star " + s.name);
+  star.addEventListener("click", () => {
+    send("radio_star?id=" + q(s.id) + "&on=toggle").then((a) => {
+      s.fav = !!a.fav;
+      star.className = "star" + (s.fav ? " fav" : "");
+      star.textContent = s.fav ? "★" : "☆";
+      status();
+    }, () => {});
+  });
+  li.append(b, star);
+  return li;
+}
+
+function drawSeg() {
+  for (const b of $("rlists").children) {
+    b.classList.toggle("sel", !rquery.trim() && b.dataset.list === rlist);
+  }
+}
+
+async function loadStations() {
+  clearTimeout(rpoll);
+  const words = rquery.trim();
+  const which = words ? "search" : (rlist || "favorites");
+  let body;
+  try {
+    body = await api("stations?list=" + which + (words ? "&q=" + q(words) : ""));
+  } catch (e) { return; }
+  if (rquery.trim() !== words || (!words && which !== (rlist || "favorites"))) { return; }
+  if (!rlist && !words) {       // first look: favourites if there are any, else popular
+    rlist = (body.stations || []).length ? "favorites" : "popular";
+    drawSeg();
+    if (rlist === "popular") { loadStations(); return; }
+  }
+  const list = $("stations");
+  list.replaceChildren();
+  for (const s of body.stations || []) { list.appendChild(stationRow(s)); }
+  let note = "";
+  if (body.error) { note = "Can't reach the station directory: " + body.error; }
+  else if (body.loading) { note = words ? "Searching…" : "Finding stations…"; }
+  else if (!(body.stations || []).length) {
+    note = words ? "No station matches that."
+         : which === "favorites" ? "No favorites yet: tap ☆ beside a station to keep it here."
+         : which === "recent" ? "Stations you play show up here."
+         : "No stations.";
+  }
+  $("rnote").textContent = note;
+  if (body.loading && rtries++ < 15) { rpoll = setTimeout(loadStations, 1200); }
+}
+
+function buildRadio() {
+  for (const b of $("rlists").children) {
+    b.addEventListener("click", () => {
+      rlist = b.dataset.list; rquery = ""; $("rfind").value = ""; rtries = 0;
+      drawSeg(); loadStations();
+    });
+  }
+  $("rfind").addEventListener("input", (e) => {
+    rquery = e.target.value; rtries = 0; drawSeg();
+    clearTimeout(rtimer);
+    rtimer = setTimeout(loadStations, 450);
+  });
+  $("ract").addEventListener("click", () => radioSend("radio?on=toggle"));
+  $("rrandom").addEventListener("click", () =>
+    radioSend("radio_random" + (rlist && !rquery.trim() ? "?list=" + rlist : "")));
+  $("rstar").addEventListener("click", () =>
+    send("radio_star?on=toggle").then(() => {
+      status();
+      if (rlist === "favorites") { loadStations(); }
+    }, () => {}));
+  $("rlive").addEventListener("click", () => radioSend("radio_live?on=toggle"));
+  $("rhear").addEventListener("click", () => radioSend("radio_hear?on=toggle"));
+}
+
+// ------------------------------------------------------------------ status, start
 async function status() {
   try {
-    const st = await api("status");
+    st = await api("status");
     playing = new Set(st.playing || []);
     markPlaying();
     const live = $("live");
     live.textContent = st.live ? "Live" : "Muted";
     live.className = st.live ? "on" : "off";
-    const v = Math.max(0, Math.min(100, Number(st.volume) || 0));
-    $("vol").textContent = v + "%";
-    $("volbar").style.width = v + "%";
+    drawTabs();
+    drawVolume();
+    drawLive(st);
+    drawMode(st.mode);
+    drawRadio(st.radio);
   } catch (e) {}
 }
 
@@ -325,13 +747,20 @@ async function load() {
     sounds = list || [];
     cats = names || [];
     if (cat && !cats.includes(cat)) { cat = ""; }
-    say(""); drawChips(); drawPads(); status();
+    say(""); drawChips(); drawPads(); await status();
+    if (view === "radio") { loadStations(); }
+    if (view === "sound") { loadSound(); }
   } catch (e) {}
 }
 
 function poll() {
   clearInterval(timer);
   if (document.visibilityState === "visible" && key) { timer = setInterval(status, 2000); }
+}
+
+function volume(step) {
+  const path = (view === "radio" ? "radio_volume" : "volume") + "?step=" + step;
+  api(path).then(status, () => {});
 }
 
 function start() {
@@ -344,9 +773,14 @@ function start() {
   }
   $("stop").addEventListener("click", () => api("stop").then(status, () => {}));
   $("live").addEventListener("click", () => api("live?on=toggle").then(status, () => {}));
-  $("down").addEventListener("click", () => api("volume?step=down").then(status, () => {}));
-  $("up").addEventListener("click", () => api("volume?step=up").then(status, () => {}));
+  $("down").addEventListener("click", () => volume("down"));
+  $("up").addEventListener("click", () => volume("up"));
   $("find").addEventListener("input", (e) => { query = e.target.value; drawPads(); });
+  for (const name of ["pads", "radio", "sound"]) {
+    $("tab-" + name).addEventListener("click", () => show(name));
+  }
+  buildSound();
+  buildRadio();
   document.addEventListener("visibilitychange", () => {
     poll();
     if (document.visibilityState === "visible") { load(); }
@@ -383,21 +817,110 @@ BODY = """<!doctype html>
     </div>
     <button id="live" title="Live / Muted: muted, nobody hears your sounds">Live</button>
   </div>
-  <div id="tools" class="tools hide">
-    <input id="find" type="search" placeholder="Search sounds" aria-label="Search sounds"
-      autocomplete="off" enterkeyhint="search">
+  <div id="padhead">
+    <div id="tools" class="tools hide">
+      <input id="find" type="search" placeholder="Search sounds" aria-label="Search sounds"
+        autocomplete="off" enterkeyhint="search">
+    </div>
+    <div id="chips" class="chips" hidden></div>
   </div>
-  <div id="chips" class="chips" hidden></div>
 </header>
 <div id="msg" role="status"></div>
 <main id="pads"></main>
+
+<section id="radio" class="view" hidden>
+  <div id="roff" class="empty" hidden><span class="big">&#x1F4FB;</span>
+    <strong>Radio is off on the PC</strong>It's switched off in Onion Board's Settings,
+    Privacy &amp; security.</div>
+  <div id="ron">
+    <div class="card now">
+      <div><span id="rstate" class="kicker">Radio</span>
+        <strong id="rname">Nothing playing</strong><span id="rsub"></span></div>
+      <div class="row">
+        <button id="rrandom" title="Play a random station">&#x1F500; Random</button>
+        <button id="rstar" title="Keep this station in Favorites">&#x2606; Star</button>
+      </div>
+      <div class="row">
+        <button id="rlive" class="toggle" aria-pressed="false"
+          title="Whether others hear the radio">Only me</button>
+        <button id="rhear" class="toggle" aria-pressed="false"
+          title="Also play the radio into your headphones">Hear it myself</button>
+      </div>
+    </div>
+    <div id="rlists" class="seg" role="tablist">
+      <button data-list="favorites">&#x2605; Favorites</button>
+      <button data-list="recent">Recent</button>
+      <button data-list="popular">Popular</button>
+    </div>
+    <input id="rfind" type="search" placeholder="Search stations, genres, countries"
+      aria-label="Search radio stations" autocomplete="off" enterkeyhint="search">
+    <p id="rnote" class="note" role="status"></p>
+    <ul id="stations" class="stations"></ul>
+  </div>
+</section>
+
+<section id="sound" class="view" hidden>
+  <div class="card">
+    <div class="head"><h2>Speed</h2><span id="speedv" class="val">1x</span></div>
+    <input id="speed" type="range" min="0.25" max="2" step="0.05" value="1"
+      aria-label="Speed">
+    <div id="quick" class="quick"></div>
+    <button id="keep" class="switch" aria-pressed="true">Keep pitch when changing speed</button>
+  </div>
+  <div class="card">
+    <div class="head"><h2>Pitch</h2><span id="pitchv" class="val">0 st</span></div>
+    <div class="step">
+      <button id="pdown" aria-label="Pitch down">&minus;</button>
+      <input id="pitch" type="range" min="-12" max="12" step="1" value="0" aria-label="Pitch">
+      <button id="pup" aria-label="Pitch up">+</button>
+    </div>
+  </div>
+  <div class="card">
+    <div class="head"><h2>Effects</h2></div>
+    <div id="fx" class="fx"></div>
+    <div id="presets" class="chips wrap"></div>
+  </div>
+  <div class="card">
+    <div class="head"><h2>Who's listening</h2></div>
+    <select id="mode" aria-label="Who's listening"></select>
+    <p id="modenote" class="hint"></p>
+  </div>
+  <p class="hint">Speed, pitch and effects change every sound while it plays, like the
+    speed button on the PC's Sounds tab: your sounds themselves stay as they are.</p>
+</section>
+
 <nav class="dock">
-  <button id="stop" title="Stop every sound">Stop all</button>
-  <div class="vol">
-    <button id="down" title="Sounds quieter" aria-label="Quieter">&minus;</button>
-    <span class="meter"><span id="vol" aria-label="Volume">&ndash;</span>
-      <span class="bar"><span id="volbar"></span></span></span>
-    <button id="up" title="Sounds louder" aria-label="Louder">+</button>
+  <div class="row">
+    <button id="stop" title="Stop every sound">Stop all</button>
+    <button id="ract" hidden>Play radio</button>
+    <button id="reset" hidden title="Back to 1x, no pitch change, no effects">Reset all</button>
+    <div class="vol">
+      <button id="down" title="Quieter" aria-label="Quieter">&minus;</button>
+      <span class="meter"><span id="vlabel" class="vlabel">Sounds</span>
+        <span id="vol" aria-label="Volume">&ndash;</span>
+        <span class="bar"><span id="volbar"></span></span></span>
+      <button id="up" title="Louder" aria-label="Louder">+</button>
+    </div>
+  </div>
+  <div id="tabs" class="tabs" role="tablist" hidden>
+    <button id="tab-pads" class="tab sel" role="tab" aria-selected="true">
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <rect x="3" y="3" width="7.5" height="7.5" rx="2"/>
+        <rect x="13.5" y="3" width="7.5" height="7.5" rx="2"/>
+        <rect x="3" y="13.5" width="7.5" height="7.5" rx="2"/>
+        <rect x="13.5" y="13.5" width="7.5" height="7.5" rx="2"/></svg>Pads</button>
+    <button id="tab-radio" class="tab" role="tab" aria-selected="false" hidden>
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <rect x="3" y="8" width="18" height="13" rx="3"/>
+        <path d="M7 8 17 3"/>
+        <circle cx="15.5" cy="14.5" r="2.5"/>
+        <path d="M6.5 12.5h4M6.5 16.5h4"/></svg>Radio</button>
+    <button id="tab-sound" class="tab" role="tab" aria-selected="false" hidden>
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M5 3v18M12 3v18M19 3v18"/>
+        <circle cx="5" cy="15" r="2.2"/>
+        <circle cx="12" cy="8" r="2.2"/>
+        <circle cx="19" cy="13" r="2.2"/></svg>Sound</button>
   </div>
 </nav>
 <script>{script}</script>

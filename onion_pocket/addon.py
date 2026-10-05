@@ -14,7 +14,9 @@ never logged; *Forget phones* makes a new one. Plain HTTP: on a home network TLS
 would mean a certificate warning on every phone. Someone on the same Wi-Fi who can
 read that traffic could take the key and play or stop your sounds, so the card says
 to use it at home, not on public Wi-Fi. The phone gets ACTIONS only: never the mic,
-the voice changer or saving the replay.
+the voice changer or saving the replay. Besides the pads that's the live speed, pitch
+and effects, who's listening, and the radio (newer Onion Boards: the ones the board
+doesn't have are left out, and the page hides their tab).
 """
 from __future__ import annotations
 
@@ -33,8 +35,19 @@ log = logging.getLogger(__name__)
 
 DEFAULT_PORT = 7475
 ACTIONS = ("status", "sounds", "categories", "play", "stop", "pause", "random", "last",
-           "category", "volume", "live")
+           "category", "volume", "live",
+           # Onion Board 1.7.2 and newer
+           "speed", "pitch", "effects", "reset", "mode",
+           "stations", "radio", "radio_random", "radio_star", "radio_live", "radio_hear",
+           "radio_volume")
 QR_PX = 200   # the pairing code's size on screen
+
+
+def offered(host) -> tuple[str, ...]:
+    """ACTIONS this board has: an older one lacks the newer ones, and asking it for an
+    action it doesn't know would stop the add-on loading at all."""
+    have = set(getattr(host, "actions", ()) or ())
+    return tuple(a for a in ACTIONS if a in have)
 
 
 def create(host):
@@ -77,7 +90,7 @@ class _Relay(QObject):
 class Pocket:
     def __init__(self, host):
         self.host = host
-        self.server = host.server(ACTIONS, page.page(), "Onion Pocket")
+        self.server = host.server(offered(host), page.page(), "Onion Pocket")
         self._relay = _Relay()
         self.asking: threading.Thread | None = None   # waiting on Windows' admin prompt
         err = self.apply()
