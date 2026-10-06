@@ -289,3 +289,11 @@ def test_settings_closed_before_the_answer_still_starts_it(host, firewall, monke
     answer.set()
     answered(pocket)
     assert pocket.server.running
+
+
+def test_a_board_that_checks_signatures_gets_the_signing_page(host):
+    """Onion Board 1.9.4+: the phone never sends the key, only signatures."""
+    host.signed_requests = True
+    addon.create(host)
+    srv = host.servers[-1]
+    assert srv.page == page.page(True) and b"const SIGNED = true;" in srv.page[0]

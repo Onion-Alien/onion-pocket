@@ -8,10 +8,13 @@ Sound (the live speed, pitch and effects, and who's listening). A tab shows only
 the board's status says it has that part, so an older Onion Board gets the pads alone.
 
 The key arrives in the link's #fragment (browsers never send that part), is kept in
-the phone's localStorage and taken out of the address bar, and goes with every
-request as X-Token. Sound names are put on the page as text, never as markup. The
-Content-Security-Policy allows exactly this script and this style (by hash),
-requests to this PC only, and data: images (the tab icon) only.
+the phone's localStorage and taken out of the address bar. With an Onion Board that
+takes signed requests (host.signed_requests) the key itself never leaves the phone:
+each request carries X-Sig, an HMAC-SHA256 of it made with the key, the time and a
+one-time nonce (SHA-256 is written out in the script: http:// pages get no
+crypto.subtle). Older ones get the key as X-Token. Sound names are put on the page
+as text, never as markup. The Content-Security-Policy allows exactly this script and
+this style (by hash), requests to this PC only, and data: images (the tab icon) only.
 """
 from __future__ import annotations
 
@@ -288,6 +291,76 @@ let view = "pads", st = {}, knobs = null, modes = null;
 let rlist = "", rquery = "", rpoll = 0, rtries = 0, rtimer = 0;
 const held = {};       // control id -> until when the status mustn't move it (a thumb on it)
 const QUICK = [0.5, 0.75, 1, 1.25, 1.5, 2];
+const SIGNED = {signed};   // the board checks signatures: the key never goes over the Wi-Fi
+let skew = 0;              // the PC's clock minus this phone's, in seconds
+
+// SHA-256 and HMAC in plain JS: on http:// pages crypto.subtle doesn't exist.
+const K256 = new Uint32Array([
+  0x428a2f98,0x71374491,0xb5c0fbcf,0xe9b5dba5,0x3956c25b,0x59f111f1,0x923f82a4,0xab1c5ed5,
+  0xd807aa98,0x12835b01,0x243185be,0x550c7dc3,0x72be5d74,0x80deb1fe,0x9bdc06a7,0xc19bf174,
+  0xe49b69c1,0xefbe4786,0x0fc19dc6,0x240ca1cc,0x2de92c6f,0x4a7484aa,0x5cb0a9dc,0x76f988da,
+  0x983e5152,0xa831c66d,0xb00327c8,0xbf597fc7,0xc6e00bf3,0xd5a79147,0x06ca6351,0x14292967,
+  0x27b70a85,0x2e1b2138,0x4d2c6dfc,0x53380d13,0x650a7354,0x766a0abb,0x81c2c92e,0x92722c85,
+  0xa2bfe8a1,0xa81a664b,0xc24b8b70,0xc76c51a3,0xd192e819,0xd6990624,0xf40e3585,0x106aa070,
+  0x19a4c116,0x1e376c08,0x2748774c,0x34b0bcb5,0x391c0cb3,0x4ed8aa4a,0x5b9cca4f,0x682e6ff3,
+  0x748f82ee,0x78a5636f,0x84c87814,0x8cc70208,0x90befffa,0xa4506ceb,0xbef9a3f7,0xc67178f2]);
+function sha256(bytes) {
+  const n = bytes.length, blocks = ((n + 9 + 63) >> 6) << 6, m = new Uint8Array(blocks);
+  m.set(bytes); m[n] = 0x80;
+  const dv = new DataView(m.buffer);
+  dv.setUint32(blocks - 8, Math.floor(n / 0x20000000)); dv.setUint32(blocks - 4, n << 3);
+  const h = new Uint32Array([0x6a09e667,0xbb67ae85,0x3c6ef372,0xa54ff53a,
+                             0x510e527f,0x9b05688c,0x1f83d9ab,0x5be0cd19]);
+  const w = new Uint32Array(64);
+  const r = (x, k) => (x >>> k) | (x << (32 - k));
+  for (let o = 0; o < blocks; o += 64) {
+    for (let i = 0; i < 16; i++) { w[i] = dv.getUint32(o + i * 4); }
+    for (let i = 16; i < 64; i++) {
+      const a = w[i - 15], b = w[i - 2];
+      w[i] = w[i - 16] + (r(a, 7) ^ r(a, 18) ^ (a >>> 3)) + w[i - 7]
+             + (r(b, 17) ^ r(b, 19) ^ (b >>> 10));
+    }
+    let [a, b, c, d, e, f, g, hh] = h;
+    for (let i = 0; i < 64; i++) {
+      const t1 = (hh + (r(e, 6) ^ r(e, 11) ^ r(e, 25)) + ((e & f) ^ (~e & g))
+                  + K256[i] + w[i]) >>> 0;
+      const t2 = ((r(a, 2) ^ r(a, 13) ^ r(a, 22)) + ((a & b) ^ (a & c) ^ (b & c))) >>> 0;
+      hh = g; g = f; f = e; e = (d + t1) >>> 0; d = c; c = b; b = a; a = (t1 + t2) >>> 0;
+    }
+    h[0] += a; h[1] += b; h[2] += c; h[3] += d; h[4] += e; h[5] += f; h[6] += g; h[7] += hh;
+  }
+  const out = new Uint8Array(32), ov = new DataView(out.buffer);
+  for (let i = 0; i < 8; i++) { ov.setUint32(i * 4, h[i]); }
+  return out;
+}
+function hmac(keyBytes, msgBytes) {
+  let k = keyBytes.length > 64 ? sha256(keyBytes) : keyBytes;
+  const pad = (x) => {
+    const p = new Uint8Array(64).fill(x);
+    k.forEach((v, i) => { p[i] ^= v; });
+    return p;
+  };
+  const cat = (a, b) => {
+    const c = new Uint8Array(a.length + b.length);
+    c.set(a); c.set(b, a.length);
+    return c;
+  };
+  return sha256(cat(pad(0x5c), sha256(cat(pad(0x36), msgBytes))));
+}
+function b64url(bytes) {
+  let s = ""; bytes.forEach((v) => { s += String.fromCharCode(v); });
+  return btoa(s).replaceAll("+", "-").replaceAll("/", "_").replace(/=+$/, "");
+}
+
+function sign(url) {
+  const u = new URL(url, location.href), enc = new TextEncoder();
+  const ts = String(Math.floor(Date.now() / 1000) + skew);
+  const r = new Uint8Array(18);
+  crypto.getRandomValues(r);
+  const n = b64url(r);
+  return ts + "." + n + "." +
+    b64url(hmac(enc.encode(key), enc.encode(ts + "." + n + ".POST " + u.pathname + u.search)));
+}
 
 function store(k) { try { k ? localStorage.setItem("ob-key", k)
                             : localStorage.removeItem("ob-key"); } catch (e) {} }
@@ -297,11 +370,12 @@ function stored() { try { return localStorage.getItem("ob-key") || ""; }
 function say(text) { $("msg").textContent = text || ""; }
 function state(cls, text) { $("dot").className = "dot " + cls; $("state").textContent = text; }
 
-async function api(path) {
+async function api(path, again) {
+  const url = "/api/" + path, used = skew;
   let r;
   try {
-    r = await fetch("/api/" + path, { method: "POST", headers: { "X-Token": key },
-                                       cache: "no-store" });
+    r = await fetch(url, { method: "POST", cache: "no-store",
+                           headers: SIGNED ? { "X-Sig": sign(url) } : { "X-Token": key } });
   } catch (e) {
     state("off", "Can't reach the PC");
     say("Can't reach Onion Board. Is it running, with Onion Pocket on, and is " +
@@ -310,6 +384,12 @@ async function api(path) {
   }
   state("on", "Connected to your PC");
   if (r.status === 401) {
+    if (SIGNED && !again && key) {   // this phone's clock is off: sign by the PC's
+      const b = await r.json().catch(() => null);
+      const s = b && Number.isFinite(b.now) ? b.now - Math.floor(Date.now() / 1000) : skew;
+      // (`used`: requests sent together all retry, not just the first one back)
+      if (Math.abs(s - used) > 30) { skew = s; return api(path, true); }
+    }
     key = ""; store("");
     state("off", "Not paired");
     say("This phone isn't paired (or the PC made a new key). Scan the QR code in " +
@@ -933,12 +1013,14 @@ def _sha(text: str) -> str:
     return "'sha256-" + base64.b64encode(hashlib.sha256(text.encode()).digest()).decode() + "'"
 
 
-def page() -> tuple[bytes, dict]:
-    """(body, headers) for host.server(page=…)."""
+def page(signed: bool = False) -> tuple[bytes, dict]:
+    """(body, headers) for host.server(page=…). `signed`: the board takes X-Sig, so
+    the script signs requests instead of sending the key."""
+    script = SCRIPT.replace("{signed}", "true" if signed else "false")
     html = (BODY.replace("{icon}", ICON).replace("{logo}", LOGO)
-            .replace("{style}", STYLE).replace("{script}", SCRIPT))
+            .replace("{style}", STYLE).replace("{script}", script))
     csp = ("default-src 'none'; "
-           f"script-src {_sha(SCRIPT)}; style-src {_sha(STYLE)}; "
+           f"script-src {_sha(script)}; style-src {_sha(STYLE)}; "
            "img-src data:; connect-src 'self'; base-uri 'none'; form-action 'none'; "
            "frame-ancestors 'none'")
     return html.encode("utf-8"), {

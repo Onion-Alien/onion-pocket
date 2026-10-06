@@ -19,7 +19,12 @@ Nothing else. No telemetry, no internet, nothing loaded from anywhere else.
   `secrets.token_urlsafe(24)` and compared with `secrets.compare_digest`.
 - The phone gets it in the QR code's `#fragment`: browsers never send that part to
   any server. The page keeps it in the phone's `localStorage`, takes it out of the
-  address bar, and sends it as an `X-Token` header.
+  address bar. With Onion Board 1.9.4 or newer the key itself never goes over the
+  Wi-Fi again: each request carries `X-Sig`, an HMAC-SHA256 made with the key over
+  the time, a one-time random nonce and the request itself. Onion Board takes each
+  signature once, only for that request, and only within 5 minutes of its own clock
+  (a phone whose clock is off is told the PC's time and signs again). Older Onion
+  Boards get the key as an `X-Token` header, as before.
 - Stored in Onion Board's `config.json` (`remote_addons`), never exported with a
   backup and never logged. *Forget phones* replaces it.
 - An address that gets it wrong 5 times in a row is ignored for a minute.
@@ -27,10 +32,16 @@ Nothing else. No telemetry, no internet, nothing loaded from anywhere else.
 ## What someone else on your Wi-Fi can do
 
 It's plain HTTP: on a home network, TLS would mean a certificate warning on every
-phone. So someone on the same network who can read its traffic could take the key
-and then play, stop or mute your sounds, run the radio or change the live effects
-until you click *Forget phones*. They can't read files, hear your mic or the call,
-change Onion Board's other settings, or reach the PC from outside your network. On shared or public Wi-Fi, leave it off.
+phone. With Onion Board 1.9.4 or newer, someone who can read the Wi-Fi's traffic
+sees only one-time signatures, never the key, and can't send them again. Someone
+who can go further and change that traffic on its way (pretend to be the PC) could
+still hand the phone a page of their own and take the key; with an older Onion
+Board, just reading the traffic is enough. With the key they could play, stop or
+mute your sounds, run the radio or change the live effects until you click *Forget
+phones*. They can't read files, hear your mic or the call, change Onion Board's
+other settings, or reach the PC from outside your network. Onion Board 1.9.4 and
+newer also don't listen at all on a network Windows calls Public. On shared or
+public Wi-Fi, leave it off.
 
 ## The page
 
