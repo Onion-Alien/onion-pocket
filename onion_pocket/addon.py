@@ -10,7 +10,9 @@ pairs by scanning a QR code (qr.py) of the link in lan.py.
 
 Its settings (host.settings): `enabled`, `port`, and `token`, its own key, never the
 Stream Deck one. The key is compared with secrets.compare_digest by the server and
-never logged; *Forget phones* makes a new one. Plain HTTP: on a home network TLS
+never logged; *Forget phones* makes a new one. With a board that checks signed
+requests the phone never sends the key, only a one-time signature made with it
+(page.py). Plain HTTP: on a home network TLS
 would mean a certificate warning on every phone. Someone on the same Wi-Fi who can
 read that traffic could take the key and play or stop your sounds, so the card says
 to use it at home, not on public Wi-Fi. The phone gets ACTIONS only: never the mic,
@@ -48,6 +50,12 @@ def offered(host) -> tuple[str, ...]:
     action it doesn't know would stop the add-on loading at all."""
     have = set(getattr(host, "actions", ()) or ())
     return tuple(a for a in ACTIONS if a in have)
+
+
+def signed(host) -> bool:
+    """Whether the board checks signed requests (Onion Board 1.9.4 and newer), so the
+    phone page never has to send the key itself."""
+    return getattr(host, "signed_requests", False) is True
 
 
 def create(host):
@@ -90,7 +98,7 @@ class _Relay(QObject):
 class Pocket:
     def __init__(self, host):
         self.host = host
-        self.server = host.server(offered(host), page.page(), "Onion Pocket")
+        self.server = host.server(offered(host), page.page(signed(host)), "Onion Pocket")
         self._relay = _Relay()
         self.asking: threading.Thread | None = None   # waiting on Windows' admin prompt
         err = self.apply()

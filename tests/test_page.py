@@ -40,3 +40,39 @@ def test_names_go_in_as_text_never_markup():
 
 def test_the_key_leaves_the_address_bar():
     assert "history.replaceState" in page.SCRIPT and '"X-Token": key' in page.SCRIPT
+
+
+def test_signed_or_not_each_page_allows_exactly_its_own_script():
+    for signed in (False, True):
+        body, headers = page.page(signed)
+        script = re.search(r"<script>(.*)</script>", body.decode(), re.S).group(1)
+        assert f"script-src {_sha(script)};" in headers["Content-Security-Policy"]
+        assert f"const SIGNED = {'true' if signed else 'false'};" in script
+        assert ('"X-Sig": sign(url)' in script) and "{signed}" not in script
+
+
+def test_the_page_signs_exactly_as_python_does():
+    """Its SHA-256 / HMAC (http:// pages get no crypto.subtle) against hashlib, at
+    every block-boundary length, in Node when it's there."""
+    import hmac
+    import json
+    import secrets
+    import shutil
+    import subprocess
+
+    import pytest
+    node = shutil.which("node")
+    if node is None:
+        pytest.skip("no Node.js here")
+    js = page.SCRIPT
+    code = js[js.index("const K256"):js.index("function sign(")]
+    cases = [("k", ""), ("key", "The quick brown fox jumps over the lazy dog"), ("k" * 100, "x")]
+    cases += [(secrets.token_urlsafe(24), "é" + "x" * n) for n in (0, 54, 55, 62, 63, 64, 120, 999)]
+    run = code + ("\nconst enc = (s) => new TextEncoder().encode(s);\n"
+                  f"console.log(JSON.stringify({json.dumps(cases)}.map(([k, m]) => "
+                  "b64url(hmac(enc(k), enc(m))))));")
+    got = json.loads(subprocess.run([node, "-e", run], capture_output=True, text=True,
+                                    check=True, timeout=180).stdout)   # a cold CI Node: slow
+    want = [base64.urlsafe_b64encode(hmac.new(k.encode(), m.encode(), hashlib.sha256)
+                                     .digest()).decode().rstrip("=") for k, m in cases]
+    assert got == want
