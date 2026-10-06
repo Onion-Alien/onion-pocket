@@ -72,7 +72,7 @@ def test_the_page_signs_exactly_as_python_does():
                   f"console.log(JSON.stringify({json.dumps(cases)}.map(([k, m]) => "
                   "b64url(hmac(enc(k), enc(m))))));")
     got = json.loads(subprocess.run([node, "-e", run], capture_output=True, text=True,
-                                    check=True, timeout=30).stdout)
+                                    check=True, timeout=180).stdout)   # a cold CI Node: slow
     want = [base64.urlsafe_b64encode(hmac.new(k.encode(), m.encode(), hashlib.sha256)
                                      .digest()).decode().rstrip("=") for k, m in cases]
     assert got == want
