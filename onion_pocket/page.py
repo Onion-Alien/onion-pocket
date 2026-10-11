@@ -285,20 +285,21 @@ select { width:100%; font:inherit; color:var(--text); background:var(--panel2);
 STYLE += """
 /* A short, self-contained dive before pairing. All artwork is drawn here. */
 #dive { position:fixed; inset:0; z-index:100; display:grid; place-items:center;
-  overflow:hidden; background:#fff; color:#2b2340; }
-.dive-logo { position:absolute; top:max(28px, env(safe-area-inset-top));
-  left:50%; transform:translateX(-50%); display:flex; align-items:center; gap:10px;
-  white-space:nowrap; font-size:18px; font-weight:650; letter-spacing:-.4px; }
-.dive-logo svg { width:36px; height:36px; }
+  overflow:hidden; background:#fff; color:#292334;
+  font-family:"Segoe UI", Arial, sans-serif; -webkit-font-smoothing:antialiased; }
+.dive-logo { position:absolute; top:max(36px, env(safe-area-inset-top));
+  left:50%; transform:translateX(-50%); display:flex; align-items:center; gap:14px;
+  white-space:nowrap; font-size:26px; font-weight:600; letter-spacing:-.8px; }
+.dive-logo svg { width:56px; height:56px; flex:none; }
 .dive-loading { position:absolute; bottom:max(74px, calc(env(safe-area-inset-bottom) + 54px));
   left:50%; transform:translateX(-50%); width:144px; text-align:center;
-  font-size:12px; color:#80798b; }
+  font-size:13px; font-weight:400; letter-spacing:.15px; color:#746d7e; }
 .dive-track { display:block; height:3px; border-radius:3px; overflow:hidden;
   background:#eeeaf4; margin-top:10px; }
 .dive-track i { display:block; height:100%; background:#9875e5;
   transform-origin:left; animation:dive-progress 5s linear both; }
 .dive-credit { position:absolute; bottom:max(20px, env(safe-area-inset-bottom));
-  left:max(22px, env(safe-area-inset-left)); font-size:11px; color:#938b9c; }
+  left:max(22px, env(safe-area-inset-left)); font-size:12px; font-weight:400; color:#82798e; }
 .dive-stage { width:min(360px, 85vw); }
 .dive-stage svg { display:block; width:100%; overflow:hidden; }
 .dive-bun { animation:dive-swim 4.8s ease-in-out both; transform-origin:320px 190px; }
@@ -343,26 +344,6 @@ INTRO = """
         <circle class="dive-bubble b3" cx="390" cy="300" r="4"/>
       </g>
       <g stroke="#2b2340" stroke-width="3" stroke-linejoin="round">
-        <g class="dive-left">
-          <path d="M-40 310C80 310 115 337 200 312S267 290 297 290" fill="none"
-            stroke="#121a2c" stroke-width="14"/>
-          <path d="M-40 307C80 307 115 334 200 309S267 287 297 287" fill="none"
-            stroke="#63768d" stroke-width="3"/>
-          <rect x="290" y="277" width="30" height="26" rx="5" fill="#9e7ce5"/>
-          <path d="M311 283v14M301 283v14" stroke="#c6b0fb"/>
-        </g>
-        <g class="dive-right">
-          <path d="M680 310C560 310 525 337 440 312S373 290 343 290" fill="none"
-            stroke="#121a2c" stroke-width="14"/>
-          <path d="M680 307C560 307 525 334 440 309S373 287 343 287" fill="none"
-            stroke="#63768d" stroke-width="3"/>
-          <rect x="320" y="279" width="31" height="22" rx="4" fill="#ece3da"/>
-          <path d="M337 283v14M344 283v14" stroke="#9aa0b4"/>
-        </g>
-        <g class="dive-light" stroke="#79f5ce" fill="#79f5ce">
-          <circle cx="326" cy="290" r="4" stroke="none"/>
-          <path d="M312 265l-7-10M333 264l5-11M321 317v10" stroke-width="2"/>
-        </g>
         <g class="dive-bun">
           <ellipse cx="364" cy="228" rx="13" ry="12" fill="#fbf7f2"/>
           <ellipse cx="320" cy="224" rx="34" ry="36" fill="#fbf7f2"/>
@@ -399,6 +380,26 @@ INTRO = """
             386 230L381 238L360 238Z" fill="#fbf7f2"/>
             <path d="M362 218v15" fill="none" stroke="#ece3da"/>
           </g>
+        </g>
+        <g class="dive-left">
+          <path d="M-40 310C80 310 115 337 200 312S267 290 297 290" fill="none"
+            stroke="#121a2c" stroke-width="14"/>
+          <path d="M-40 307C80 307 115 334 200 309S267 287 297 287" fill="none"
+            stroke="#63768d" stroke-width="3"/>
+          <rect x="290" y="277" width="30" height="26" rx="5" fill="#9e7ce5"/>
+          <path d="M311 283v14M301 283v14" stroke="#c6b0fb"/>
+        </g>
+        <g class="dive-right">
+          <path d="M680 310C560 310 525 337 440 312S373 290 343 290" fill="none"
+            stroke="#121a2c" stroke-width="14"/>
+          <path d="M680 307C560 307 525 334 440 309S373 287 343 287" fill="none"
+            stroke="#63768d" stroke-width="3"/>
+          <rect x="320" y="279" width="31" height="22" rx="4" fill="#ece3da"/>
+          <path d="M337 283v14M344 283v14" stroke="#9aa0b4"/>
+        </g>
+        <g class="dive-light" stroke="#79f5ce" fill="#79f5ce">
+          <circle cx="326" cy="290" r="4" stroke="none"/>
+          <path d="M312 265l-7-10M333 264l5-11M321 317v10" stroke-width="2"/>
         </g>
       </g>
     </svg>
