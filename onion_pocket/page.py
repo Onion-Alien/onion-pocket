@@ -303,7 +303,7 @@ STYLE += """
   background:#ffffff16; }
 .dive-track i { display:block; height:100%; border-radius:inherit;
   background:linear-gradient(90deg, #7c5cff, #ff4d8d);
-  transform-origin:left; animation:dive-progress 3s steps(1, end) both; }
+  transform-origin:left; animation:dive-progress-pending 3s steps(1, end) both; }
 .dive-credit { position:absolute; bottom:max(20px, env(safe-area-inset-bottom));
   left:max(22px, env(safe-area-inset-left)); display:flex; align-items:baseline; gap:7px;
   color:var(--dim); }
@@ -315,7 +315,7 @@ STYLE += """
   -webkit-background-clip:text; background-clip:text; color:transparent; }
 .dive-stage { width:min(360px, 90vw); }
 .dive-stage svg { display:block; width:100%; overflow:hidden; }
-.dive-bun { animation:dive-swim 2.8s ease-in-out both; transform-origin:320px 190px; }
+.dive-bun { animation:dive-wait 2.8s ease-in-out both; transform-origin:320px 190px; }
 .dive-flipper { animation:dive-kick .48s ease-in-out infinite alternate;
   transform-box:fill-box; transform-origin:50% 0%; }
 .dive-left { animation:dive-left 2.8s ease-in-out both; }
@@ -343,7 +343,7 @@ STYLE += """
 @keyframes dive-wrist { 0%, 30% { transform:rotate(0); }
   50%, 55% { transform:rotate(-38deg); } 68%, 100% { transform:rotate(78deg); } }
 @keyframes dive-kick { to { transform:rotate(22deg); } }
-@keyframes dive-progress {
+@keyframes dive-progress-complete {
   0% { transform:scaleX(0); } 10% { transform:scaleX(.15); }
   32% { transform:scaleX(.39); } 56% { transform:scaleX(.58); }
   78% { transform:scaleX(.84); } 96%, 100% { transform:scaleX(1); }
@@ -367,6 +367,62 @@ STYLE += """
   .dive-logo svg { width:40px; height:40px; }
   .dive-stage { width:min(300px, 75vw); }
   .dive-loading { top:calc(50% + 105px); }
+}
+"""
+
+STYLE += """
+#retry { margin:0 16px 16px; }
+.dive-x-eyes { opacity:0; }
+#dive:not(.connected) .dive-left { animation:none; transform:translateX(-30px); }
+#dive:not(.connected) .dive-right { animation:none; transform:translateX(30px); }
+#dive:not(.connected) .dive-light { animation:none; opacity:0; }
+#dive:not(.connected) .dive-hand-left,
+#dive:not(.connected) .dive-hand-right,
+#dive:not(.connected) .dive-right-paw { animation:none; transform:rotate(0); }
+#dive:not(.connected) .dive-thumb { animation:none; transform:scaleY(.1); }
+#dive.connected .dive-bun { animation-name:dive-swim; }
+#dive.connected .dive-track i { animation-name:dive-progress-complete;
+  animation-delay:var(--dive-progress-delay, 0ms); }
+#dive.connected .dive-bun, #dive.connected .dive-left, #dive.connected .dive-right,
+#dive.connected .dive-hand-left, #dive.connected .dive-hand-right,
+#dive.connected .dive-right-paw, #dive.connected .dive-thumb, #dive.connected .dive-light,
+#dive.failed .dive-bun, #dive.failed .dive-eyes, #dive.failed .dive-x-eyes {
+  animation-delay:var(--dive-delay, 0ms); }
+#dive.failed .dive-bun { animation-name:dive-sink; }
+#dive.failed .dive-hand-right { animation:dive-down-arm 2.8s ease-in-out both;
+  animation-delay:var(--dive-delay, 0ms); }
+#dive.failed .dive-right-paw { animation:dive-down-wrist 2.8s ease-in-out both;
+  animation-delay:var(--dive-delay, 0ms); }
+#dive.failed .dive-thumb { animation:dive-thumb 2.8s ease-in-out both;
+  animation-delay:var(--dive-delay, 0ms); }
+#dive.failed .dive-eyes { animation:dive-shut 2.8s steps(1, end) both;
+  animation-delay:var(--dive-delay, 0ms); }
+#dive.failed .dive-x-eyes { animation:dive-cross 2.8s steps(1, end) both;
+  animation-delay:var(--dive-delay, 0ms); }
+#dive.failed .dive-track i { background:linear-gradient(90deg, #ff826f, #ff4d8d); }
+@keyframes dive-wait { 0% { transform:translate(0,-25px) rotate(-8deg); }
+  20% { transform:translate(-24px,10px) rotate(8deg); }
+  38%, 100% { transform:translate(0,22px); } }
+@keyframes dive-sink { 0% { transform:translate(0,-25px) rotate(-8deg); opacity:1; }
+  20% { transform:translate(-24px,10px) rotate(8deg); }
+  38%, 68% { transform:translate(0,22px); }
+  80% { transform:translate(0,36px) rotate(4deg); opacity:1; }
+  100% { transform:translate(0,180px) rotate(14deg); opacity:0; } }
+@keyframes dive-down-arm { 0%, 38% { transform:rotate(0); }
+  68%, 100% { transform:rotate(-78deg); } }
+@keyframes dive-down-wrist { 0%, 38% { transform:rotate(0); }
+  68%, 100% { transform:rotate(-102deg); } }
+@keyframes dive-shut { 0% { opacity:1; } 75%, 100% { opacity:0; } }
+@keyframes dive-cross { 0% { opacity:0; } 75%, 100% { opacity:1; } }
+@keyframes dive-progress-pending {
+  0% { transform:scaleX(0); } 10% { transform:scaleX(.15); }
+  32% { transform:scaleX(.39); } 56% { transform:scaleX(.58); }
+  78%, 100% { transform:scaleX(.84); }
+}
+@media (prefers-reduced-motion:reduce) {
+  #dive * { animation:none !important; }
+  #dive.failed .dive-eyes { opacity:0; }
+  #dive.failed .dive-x-eyes { opacity:1; }
 }
 """
 
@@ -406,8 +462,13 @@ INTRO = """
             fill-opacity=".65" stroke="#386175"/>
           <path d="M293 175l14-2M331 175l12-2" stroke="#d7ffff" stroke-width="3"
             stroke-linecap="round"/>
+          <g class="dive-eyes">
           <ellipse cx="306" cy="183" rx="3" ry="5" fill="#2b2340" stroke="none"/>
           <ellipse cx="335" cy="183" rx="3" ry="5" fill="#2b2340" stroke="none"/>
+          </g>
+          <g class="dive-x-eyes" fill="none" stroke-linecap="round">
+            <path d="M302 179l8 8M310 179l-8 8M331 179l8 8M339 179l-8 8"/>
+          </g>
           <path d="M316 198Q320 204 325 198M311 207Q320 214 330 206" fill="none"
             stroke-linecap="round"/>
           {badge}
@@ -556,11 +617,11 @@ function stored() { try { return localStorage.getItem("ob-key") || ""; }
 function say(text) { $("msg").textContent = text || ""; }
 function state(cls, text) { $("dot").className = "dot " + cls; $("state").textContent = text; }
 
-async function api(path, again) {
+async function api(path, again, signal) {
   const url = "/api/" + path, used = skew;
   let r;
   try {
-    r = await fetch(url, { method: "POST", cache: "no-store",
+    r = await fetch(url, { method: "POST", cache: "no-store", signal,
                            headers: SIGNED ? { "X-Sig": sign(url) } : { "X-Token": key } });
   } catch (e) {
     state("off", "Can't reach the PC");
@@ -574,7 +635,7 @@ async function api(path, again) {
       const b = await r.json().catch(() => null);
       const s = b && Number.isFinite(b.now) ? b.now - Math.floor(Date.now() / 1000) : skew;
       // (`used`: requests sent together all retry, not just the first one back)
-      if (Math.abs(s - used) > 30) { skew = s; return api(path, true); }
+      if (Math.abs(s - used) > 30) { skew = s; return api(path, true, signal); }
     }
     key = ""; store("");
     state("off", "Not paired");
@@ -990,9 +1051,9 @@ function buildRadio() {
 }
 
 // ------------------------------------------------------------------ status, start
-async function status() {
+async function status(options = {}) {
   try {
-    st = await api("status");
+    st = await api("status", false, options?.signal);
     playing = new Set(st.playing || []);
     markPlaying();
     const live = $("live");
@@ -1003,20 +1064,25 @@ async function status() {
     drawLive(st);
     drawMode(st.mode);
     drawRadio(st.radio);
-  } catch (e) {}
+    return true;
+  } catch (e) { return false; }
 }
 
-async function load() {
-  if (!key) { state("", "Not paired"); drawPads(); return; }
+async function load(options = {}) {
+  if (!key) { state("", "Not paired"); drawPads(); return false; }
   try {
-    const [list, names] = await Promise.all([api("sounds"), api("categories")]);
+    const [list, names] = await Promise.all([
+      api("sounds", false, options?.signal), api("categories", false, options?.signal)]);
     sounds = list || [];
     cats = names || [];
     if (cat && !cats.includes(cat)) { cat = ""; }
-    say(""); drawChips(); drawPads(); await status();
+    say(""); drawChips(); drawPads();
+    if (!await status(options)) { return false; }
     if (view === "radio") { loadStations(); }
     if (view === "sound") { loadSound(); }
-  } catch (e) {}
+    $("retry").hidden = true;
+    return true;
+  } catch (e) { return false; }
 }
 
 function poll() {
@@ -1032,13 +1098,30 @@ function volume(step) {
 function start() {
   let introDone = false;
   let introTimer;
+  let outcome = null, revealAt = 3000;
+  const started = performance.now(), controller = new AbortController();
+  function result(ok) {
+    if (introDone || outcome !== null) { return; }
+    outcome = ok;
+    const elapsed = performance.now() - started;
+    const poseTime = Math.min(elapsed, ok ? 1800 : 1900);
+    const dive = $("dive");
+    dive.style.setProperty("--dive-delay", "-" + poseTime + "ms");
+    dive.style.setProperty("--dive-progress-delay", "-" + elapsed + "ms");
+    dive.classList.add(ok ? "connected" : "failed");
+    revealAt = Math.max(3000, elapsed + 2800 - poseTime);
+  }
   function finishIntro() {
     if (introDone) { return; }
+    if (outcome === null) { controller.abort(); result(false); }
+    const remaining = revealAt - (performance.now() - started);
+    if (remaining > 10) { introTimer = setTimeout(finishIntro, remaining); return; }
     introDone = true;
     clearTimeout(introTimer);
     $("dive").remove();
     $("pocket-app").inert = false;
-    load(); poll();
+    $("retry").hidden = outcome || !key;
+    poll();
   }
   const m = /[#&]k=([A-Za-z0-9_-]+)/.exec(location.hash);
   if (m) {
@@ -1057,12 +1140,16 @@ function start() {
   }
   buildSound();
   buildRadio();
+  $("retry").addEventListener("click", () => {
+    load().then(ok => { $("retry").hidden = ok || !key; });
+  });
   document.addEventListener("visibilitychange", () => {
     if (!introDone) { return; }
     poll();
     if (document.visibilityState === "visible") { load(); }
   });
   introTimer = setTimeout(finishIntro, 3000);
+  load({ signal:controller.signal }).then(result);
 }
 
 start();
@@ -1105,6 +1192,7 @@ BODY = """<!doctype html>
   </div>
 </header>
 <div id="msg" role="status"></div>
+<button id="retry" hidden>Try again</button>
 <main id="pads"></main>
 
 <section id="radio" class="view" hidden>
