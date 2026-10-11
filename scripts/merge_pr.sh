@@ -5,7 +5,7 @@
 # The merge is made here, in a throwaway worktree, and pushed to main; GitHub then
 # marks the PR merged by itself.
 #   sh scripts/merge_pr.sh N [--delete-branch]
-# Needs: the PR's required checks green, its commits in UTC (scripts/utc_fix.sh on
+# Needs: all the PR's checks green, its commits in UTC (scripts/utc_fix.sh on
 # the branch if not), and a merge with main that needs no hand-fixing (else merge
 # main into the PR branch first, push, wait for CI, then run this again).
 set -e
@@ -23,12 +23,12 @@ title=$(gh pr view "$n" --json title -q .title)
 [ "$pr_state" = OPEN ] || { echo "PR #$n is $pr_state." >&2; exit 1; }
 [ "$base" = main ] || { echo "PR #$n goes into $base, not main." >&2; exit 1; }
 
-# required checks: gh exits 0 only when every one has passed
-checks_passed=$(gh pr checks "$n" --required --json bucket \
+# All checks: this repo doesn't configure a required-check branch rule.
+checks_passed=$(gh pr checks "$n" --json bucket \
     --jq 'length > 0 and all(.[]; .bucket == "pass")' 2>/dev/null || true)
 if [ "$checks_passed" != true ]; then
-    gh pr checks "$n" --required >&2 || true
-    echo "PR #$n: its required checks haven't all passed yet." >&2
+    gh pr checks "$n" >&2 || true
+    echo "PR #$n: its checks haven't all passed yet." >&2
     exit 1
 fi
 
