@@ -282,6 +282,116 @@ select { width:100%; font:inherit; color:var(--text); background:var(--panel2);
 }
 """
 
+STYLE += """
+/* A short, self-contained dive before pairing. All artwork is drawn here. */
+#dive { position:fixed; inset:0; z-index:100; display:grid; place-items:center;
+  overflow:hidden; background:#fff; }
+.dive-stage { width:min(360px, 85vw); }
+.dive-stage svg { display:block; width:100%; overflow:hidden; }
+.dive-bun { animation:dive-swim 4.8s ease-in-out both; transform-origin:320px 190px; }
+.dive-flipper { animation:dive-kick .48s ease-in-out infinite alternate;
+  transform-box:fill-box; transform-origin:50% 0%; }
+.dive-left { animation:dive-left 4.8s ease-in-out both; }
+.dive-right { animation:dive-right 4.8s ease-in-out both; }
+.dive-light { animation:dive-light 4.8s linear both; }
+.dive-thumb { animation:dive-thumb 4.8s ease-in-out both; transform-origin:375px 220px; }
+.dive-bubble { animation:dive-bubble 2.4s ease-in infinite; }
+.dive-bubble.b2 { animation-delay:-.8s; }
+.dive-bubble.b3 { animation-delay:-1.6s; }
+@keyframes dive-swim {
+  0% { transform:translate(0,-25px) rotate(-8deg); }
+  20% { transform:translate(-24px,10px) rotate(8deg); }
+  38%, 55% { transform:translate(0,45px) rotate(0); }
+  65%, 78% { transform:translate(0,0) rotate(-4deg); }
+  100% { transform:translate(480px,-130px) rotate(20deg); }
+}
+@keyframes dive-kick { to { transform:rotate(22deg); } }
+@keyframes dive-left { 0%, 30% { transform:translateX(-30px); }
+  50%, 100% { transform:translateX(0); } }
+@keyframes dive-right { 0%, 30% { transform:translateX(30px); }
+  50%, 100% { transform:translateX(0); } }
+@keyframes dive-light { 0%, 49% { opacity:0; } 52%, 100% { opacity:1; } }
+@keyframes dive-thumb { 0%, 58% { opacity:0; transform:scale(.5); }
+  65%, 82% { opacity:1; transform:scale(1); } 90%, 100% { opacity:0; } }
+@keyframes dive-bubble { from { transform:translateY(30px); opacity:0; }
+  20% { opacity:.7; } to { transform:translateY(-180px); opacity:0; } }
+@media (prefers-reduced-motion:reduce) { #dive * { animation:none; } }
+"""
+
+INTRO = """
+<div id="dive" aria-label="Onion Pocket opening animation">
+  <div class="dive-stage">
+    <svg viewBox="0 0 640 400" aria-hidden="true">
+      <g fill="none" stroke="#59b9c1" stroke-width="2" opacity=".7">
+        <circle class="dive-bubble" cx="220" cy="280" r="5"/>
+        <circle class="dive-bubble b2" cx="420" cy="260" r="8"/>
+        <circle class="dive-bubble b3" cx="390" cy="300" r="4"/>
+      </g>
+      <g stroke="#2b2340" stroke-width="3" stroke-linejoin="round">
+        <g class="dive-left">
+          <path d="M-40 310C80 310 115 337 200 312S267 290 297 290" fill="none"
+            stroke="#121a2c" stroke-width="14"/>
+          <path d="M-40 307C80 307 115 334 200 309S267 287 297 287" fill="none"
+            stroke="#63768d" stroke-width="3"/>
+          <rect x="290" y="277" width="30" height="26" rx="5" fill="#9e7ce5"/>
+          <path d="M311 283v14M301 283v14" stroke="#c6b0fb"/>
+        </g>
+        <g class="dive-right">
+          <path d="M680 310C560 310 525 337 440 312S373 290 343 290" fill="none"
+            stroke="#121a2c" stroke-width="14"/>
+          <path d="M680 307C560 307 525 334 440 309S373 287 343 287" fill="none"
+            stroke="#63768d" stroke-width="3"/>
+          <rect x="320" y="279" width="31" height="22" rx="4" fill="#ece3da"/>
+          <path d="M337 283v14M344 283v14" stroke="#9aa0b4"/>
+        </g>
+        <g class="dive-light" stroke="#79f5ce" fill="#79f5ce">
+          <circle cx="326" cy="290" r="4" stroke="none"/>
+          <path d="M312 265l-7-10M333 264l5-11M321 317v10" stroke-width="2"/>
+        </g>
+        <g class="dive-bun">
+          <ellipse cx="364" cy="228" rx="13" ry="12" fill="#fbf7f2"/>
+          <ellipse cx="320" cy="224" rx="34" ry="36" fill="#fbf7f2"/>
+          <ellipse cx="320" cy="233" rx="22" ry="24" fill="#ece3da" stroke="none"/>
+          <g class="dive-flipper" fill="#a68afa">
+            <path d="M293 249Q276 260 276 280Q297 283 306 255Z"/>
+            <path d="M336 250Q350 264 354 281Q332 283 324 256Z"/>
+          </g>
+          <ellipse cx="298" cy="135" rx="13" ry="37" transform="rotate(-12 298 135)"
+            fill="#fbf7f2"/>
+          <ellipse cx="341" cy="137" rx="13" ry="35" transform="rotate(17 341 137)" fill="#fbf7f2"/>
+          <ellipse cx="298" cy="136" rx="6" ry="25" transform="rotate(-12 298 136)"
+            fill="#ffb3c7" stroke="none"/>
+          <ellipse cx="341" cy="138" rx="6" ry="23" transform="rotate(17 341 138)"
+            fill="#ffb3c7" stroke="none"/>
+          <ellipse cx="320" cy="183" rx="43" ry="37" fill="#fbf7f2"/>
+          <path d="M279 180Q273 135 320 141Q366 141 362 182" fill="none" stroke="#a68afa"
+            stroke-width="9"/>
+          <rect x="271" y="170" width="13" height="27" rx="6" fill="#a68afa"/>
+          <rect x="356" y="170" width="13" height="27" rx="6" fill="#a68afa"/>
+          <rect x="287" y="169" width="66" height="27" rx="12" fill="#83e5e4"
+            fill-opacity=".65" stroke="#386175"/>
+          <path d="M293 175l14-2M331 175l12-2" stroke="#d7ffff" stroke-width="3"
+            stroke-linecap="round"/>
+          <ellipse cx="306" cy="183" rx="3" ry="5" fill="#2b2340" stroke="none"/>
+          <ellipse cx="335" cy="183" rx="3" ry="5" fill="#2b2340" stroke="none"/>
+          <path d="M316 198Q320 204 325 198M311 207Q320 214 330 206" fill="none"
+            stroke-linecap="round"/>
+          <ellipse cx="288" cy="235" rx="11" ry="19" transform="rotate(-28 288 235)"
+            fill="#fbf7f2"/>
+          <ellipse cx="351" cy="235" rx="11" ry="19" transform="rotate(28 351 235)" fill="#fbf7f2"/>
+          <g class="dive-thumb">
+            <path d="M348 224L361 213L362 200Q362 193 368 195Q373 197 369 212L383 211Q391 214
+            386 230L381 238L360 238Z" fill="#fbf7f2"/>
+            <path d="M362 218v15" fill="none" stroke="#ece3da"/>
+          </g>
+        </g>
+      </g>
+    </svg>
+  </div>
+</div>
+"""
+
+
 SCRIPT = """
 "use strict";
 const $ = (id) => document.getElementById(id);
@@ -844,6 +954,16 @@ function volume(step) {
 }
 
 function start() {
+  let introDone = false;
+  let introTimer;
+  function finishIntro() {
+    if (introDone) { return; }
+    introDone = true;
+    clearTimeout(introTimer);
+    $("dive").remove();
+    $("pocket-app").inert = false;
+    load(); poll();
+  }
   const m = /[#&]k=([A-Za-z0-9_-]+)/.exec(location.hash);
   if (m) {
     key = m[1]; store(key);
@@ -862,10 +982,11 @@ function start() {
   buildSound();
   buildRadio();
   document.addEventListener("visibilitychange", () => {
+    if (!introDone) { return; }
     poll();
     if (document.visibilityState === "visible") { load(); }
   });
-  load(); poll();
+  introTimer = setTimeout(finishIntro, 5000);
 }
 
 start();
@@ -888,6 +1009,8 @@ BODY = """<!doctype html>
 <style>{style}</style>
 </head>
 <body>
+{intro}
+<div id="pocket-app" inert>
 <header>
   <div class="brand">
     {logo}
@@ -1003,6 +1126,7 @@ BODY = """<!doctype html>
         <circle cx="19" cy="13" r="2.2"/></svg>Sound</button>
   </div>
 </nav>
+</div>
 <script>{script}</script>
 </body>
 </html>
@@ -1017,7 +1141,7 @@ def page(signed: bool = False) -> tuple[bytes, dict]:
     """(body, headers) for host.server(page=…). `signed`: the board takes X-Sig, so
     the script signs requests instead of sending the key."""
     script = SCRIPT.replace("{signed}", "true" if signed else "false")
-    html = (BODY.replace("{icon}", ICON).replace("{logo}", LOGO)
+    html = (BODY.replace("{icon}", ICON).replace("{logo}", LOGO).replace("{intro}", INTRO)
             .replace("{style}", STYLE).replace("{script}", script))
     csp = ("default-src 'none'; "
            f"script-src {_sha(script)}; style-src {_sha(STYLE)}; "
