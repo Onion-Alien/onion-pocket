@@ -418,32 +418,33 @@ STYLE += """
 #dive.connected .dive-right-paw, #dive.connected .dive-thumb, #dive.connected .dive-light,
 #dive.failed .dive-bun, #dive.failed .dive-eyes, #dive.failed .dive-x-eyes {
   animation-delay:var(--dive-delay, 0ms); }
-#dive.failed .dive-bun { animation-name:dive-sink; }
-#dive.failed .dive-hand-right { animation:dive-down-arm 2.8s ease-in-out both;
-  animation-delay:var(--dive-delay, 0ms); }
-#dive.failed .dive-right-paw { animation:dive-down-wrist 2.8s ease-in-out both;
-  animation-delay:var(--dive-delay, 0ms); }
-#dive.failed .dive-thumb { animation:dive-thumb 2.8s ease-in-out both;
-  animation-delay:var(--dive-delay, 0ms); }
-#dive.failed .dive-eyes { animation:dive-shut 2.8s steps(1, end) both;
-  animation-delay:var(--dive-delay, 0ms); }
-#dive.failed .dive-x-eyes { animation:dive-cross 2.8s steps(1, end) both;
-  animation-delay:var(--dive-delay, 0ms); }
+#dive.failed .dive-bun { animation:dive-shock-fall 4s linear both; }
+#dive.failed .dive-flipper { animation:none; }
+.dive-skeleton, .dive-electric { opacity:0; }
+#dive.failed .dive-flesh { animation:dive-blackout 1.8s steps(1,end) both; }
+#dive.failed .dive-skeleton, #dive.failed .dive-electric {
+  animation:dive-shock-flash 1.8s linear both; }
+#dive.failed .dive-eyes { opacity:0; animation:none; }
+#dive.failed .dive-x-eyes { opacity:1; animation:none; }
 #dive.failed .dive-track i { background:linear-gradient(90deg, #ff826f, #ff4d8d); }
 @keyframes dive-wait { 0% { transform:translate(0,-25px) rotate(-8deg); }
   20% { transform:translate(-24px,10px) rotate(8deg); }
   38%, 100% { transform:translate(0,22px); } }
-@keyframes dive-sink { 0% { transform:translate(0,-25px) rotate(-8deg); opacity:1; }
-  20% { transform:translate(-24px,10px) rotate(8deg); }
-  38%, 68% { transform:translate(0,22px); }
-  80% { transform:translate(0,36px) rotate(4deg); opacity:1; }
-  100% { transform:translate(0,180px) rotate(14deg); opacity:0; } }
-@keyframes dive-down-arm { 0%, 38% { transform:rotate(0); }
-  68%, 100% { transform:rotate(-78deg); } }
-@keyframes dive-down-wrist { 0%, 38% { transform:rotate(0); }
-  68%, 100% { transform:rotate(-102deg); } }
-@keyframes dive-shut { 0% { opacity:1; } 75%, 100% { opacity:0; } }
-@keyframes dive-cross { 0% { opacity:0; } 75%, 100% { opacity:1; } }
+/* Hold at the live cable for 1.8 s, then roll onto his back and drift down. */
+@keyframes dive-shock-fall {
+  0%, 10%, 20%, 30%, 40%, 45% { transform:translate(0,22px) rotate(0); opacity:1; }
+  5%, 15%, 25%, 35% { transform:translate(2px,22px) rotate(2deg); }
+  8%, 18%, 28%, 38% { transform:translate(-2px,22px) rotate(-2deg); }
+  60% { transform:translate(0,40px) rotate(-78deg); }
+  72% { transform:translate(3px,68px) rotate(-90deg); }
+  90% { transform:translate(-3px,124px) rotate(-94deg); opacity:1; }
+  100% { transform:translate(0,180px) rotate(-90deg); opacity:0; }
+}
+@keyframes dive-blackout { 0% { filter:brightness(0); } 100% { filter:none; } }
+@keyframes dive-shock-flash {
+  0%, 20%, 35%, 55%, 70%, 95% { opacity:1; }
+  25%, 30%, 60%, 65%, 100% { opacity:0; }
+}
 @keyframes dive-progress-pending {
   0% { transform:scaleX(0); } 10% { transform:scaleX(.15); }
   32% { transform:scaleX(.39); } 56% { transform:scaleX(.58); }
@@ -453,6 +454,9 @@ STYLE += """
   #dive * { animation:none !important; }
   #dive.failed .dive-eyes { opacity:0; }
   #dive.failed .dive-x-eyes { opacity:1; }
+  #dive.failed .dive-bun { transform:translate(0,40px) rotate(-90deg); }
+  #dive.failed .dive-flesh { filter:none; }
+  #dive.failed .dive-skeleton, #dive.failed .dive-electric { opacity:0; }
 }
 """
 
@@ -469,6 +473,7 @@ INTRO = """
       <g stroke="#2b2340" stroke-width="3" stroke-linejoin="round">
         <g class="dive-bun">
           <g transform="translate(320 190) scale(1.25) translate(-320 -190)">
+          <g class="dive-flesh">
           <ellipse cx="364" cy="228" rx="13" ry="12" fill="#fbf7f2"/>
           <ellipse cx="320" cy="224" rx="34" ry="36" fill="#fbf7f2"/>
           <ellipse cx="320" cy="233" rx="22" ry="24" fill="#ece3da" stroke="none"/>
@@ -503,6 +508,20 @@ INTRO = """
             stroke-linecap="round"/>
           {badge}
           </g>
+          <g class="dive-skeleton" fill="none" stroke="#f4ffff" stroke-width="4"
+            stroke-linecap="round" stroke-linejoin="round">
+            <path d="M299 151l-5-34M339 152l9-31"/>
+            <path d="M295 178Q295 157 320 157Q345 157 345 178Q345 192 335 196
+              L332 204H308L305 196Q295 192 295 178Z" fill="#f4ffff" stroke-width="2"/>
+            <ellipse cx="307" cy="180" rx="7" ry="9" fill="#08070d" stroke="none"/>
+            <ellipse cx="334" cy="180" rx="7" ry="9" fill="#08070d" stroke="none"/>
+            <path d="M318 190l-3 5h9l-3-5Z" fill="#08070d" stroke="none"/>
+            <path d="M314 200v5M321 200v5M327 200v5" stroke="#08070d" stroke-width="2"/>
+            <path d="M320 209v37M306 217Q320 228 334 217M302 225Q320 238 338 225
+              M306 235Q320 245 334 235M308 247l12 8 12-8M311 254l-18 17
+              M328 254l15 18M290 272l9 3M339 275l9-3"/>
+          </g>
+          </g>
         </g>
         <g class="dive-left">
           <path d="M70 310C120 310 145 328 210 310S267 290 297 290" fill="none"
@@ -526,6 +545,7 @@ INTRO = """
         </g>
         <g class="dive-bun">
           <g transform="translate(320 190) scale(1.25) translate(-320 -190)">
+            <g class="dive-flesh">
             <g class="dive-hand-left">
               <path d="M300 219Q289 230 285 251" fill="none" stroke-width="18"
                 stroke-linecap="round"/>
@@ -547,6 +567,19 @@ INTRO = """
               </g>
             </g>
           </g>
+            <g class="dive-skeleton" fill="none" stroke="#f4ffff" stroke-width="4"
+              stroke-linecap="round">
+              <path d="M300 219l-9 16-6 16M340 219l8 16 3 16M281 249l8 4M347 253l8-4"/>
+              <circle cx="291" cy="235" r="2" fill="#f4ffff"/>
+              <circle cx="348" cy="235" r="2" fill="#f4ffff"/>
+            </g>
+          </g>
+        </g>
+        <g class="dive-electric" fill="none" stroke="#b7faff" stroke-width="3"
+          stroke-linecap="round" stroke-linejoin="round">
+          <path d="M268 290l-12-10 15-3-8-13 17 3M370 290l13-10-15-3 8-13-16 3
+            M263 224l-12-13 15-4-7-14M378 218l14-12-14-5 7-15
+            M304 91l8-12 8 13 8-14M282 319l-8 13 14-2M360 319l9 13-14-2"/>
         </g>
       </g>
     </svg>
@@ -1229,12 +1262,12 @@ function start() {
     if (introDone || outcome !== null) { return; }
     outcome = ok;
     const elapsed = performance.now() - started;
-    const poseTime = Math.min(elapsed, ok ? 1800 : 1900);
+    const poseTime = Math.min(elapsed, 1800);
     const dive = $("dive");
     dive.style.setProperty("--dive-delay", "-" + poseTime + "ms");
     dive.style.setProperty("--dive-progress-delay", "-" + elapsed + "ms");
     dive.classList.add(ok ? "connected" : "failed");
-    revealAt = Math.max(3000, elapsed + 2800 - poseTime);
+    revealAt = Math.max(3000, elapsed + (ok ? 2800 - poseTime : 4000));
   }
   function finishIntro() {
     if (introDone) { return; }
