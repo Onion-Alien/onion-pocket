@@ -285,7 +285,20 @@ select { width:100%; font:inherit; color:var(--text); background:var(--panel2);
 STYLE += """
 /* A short, self-contained dive before pairing. All artwork is drawn here. */
 #dive { position:fixed; inset:0; z-index:100; display:grid; place-items:center;
-  overflow:hidden; background:#fff; }
+  overflow:hidden; background:#fff; color:#2b2340; }
+.dive-logo { position:absolute; top:max(28px, env(safe-area-inset-top));
+  left:50%; transform:translateX(-50%); display:flex; align-items:center; gap:10px;
+  white-space:nowrap; font-size:18px; font-weight:650; letter-spacing:-.4px; }
+.dive-logo svg { width:36px; height:36px; }
+.dive-loading { position:absolute; bottom:max(74px, calc(env(safe-area-inset-bottom) + 54px));
+  left:50%; transform:translateX(-50%); width:144px; text-align:center;
+  font-size:12px; color:#80798b; }
+.dive-track { display:block; height:3px; border-radius:3px; overflow:hidden;
+  background:#eeeaf4; margin-top:10px; }
+.dive-track i { display:block; height:100%; background:#9875e5;
+  transform-origin:left; animation:dive-progress 5s linear both; }
+.dive-credit { position:absolute; bottom:max(20px, env(safe-area-inset-bottom));
+  left:max(22px, env(safe-area-inset-left)); font-size:11px; color:#938b9c; }
 .dive-stage { width:min(360px, 85vw); }
 .dive-stage svg { display:block; width:100%; overflow:hidden; }
 .dive-bun { animation:dive-swim 4.8s ease-in-out both; transform-origin:320px 190px; }
@@ -306,6 +319,7 @@ STYLE += """
   100% { transform:translate(480px,-130px) rotate(20deg); }
 }
 @keyframes dive-kick { to { transform:rotate(22deg); } }
+@keyframes dive-progress { from { transform:scaleX(0); } to { transform:scaleX(1); } }
 @keyframes dive-left { 0%, 30% { transform:translateX(-30px); }
   50%, 100% { transform:translateX(0); } }
 @keyframes dive-right { 0%, 30% { transform:translateX(30px); }
@@ -320,6 +334,7 @@ STYLE += """
 
 INTRO = """
 <div id="dive" aria-label="Onion Pocket opening animation">
+  <div class="dive-logo">{intro-logo}<span>Onion Pocket</span></div>
   <div class="dive-stage">
     <svg viewBox="0 0 640 400" aria-hidden="true">
       <g fill="none" stroke="#59b9c1" stroke-width="2" opacity=".7">
@@ -388,6 +403,10 @@ INTRO = """
       </g>
     </svg>
   </div>
+  <div class="dive-loading" role="status">Loading…
+    <span class="dive-track" aria-hidden="true"><i></i></span>
+  </div>
+  <div class="dive-credit">An app by Onion Alien</div>
 </div>
 """
 
@@ -1142,6 +1161,9 @@ def page(signed: bool = False) -> tuple[bytes, dict]:
     the script signs requests instead of sending the key."""
     script = SCRIPT.replace("{signed}", "true" if signed else "false")
     html = (BODY.replace("{icon}", ICON).replace("{logo}", LOGO).replace("{intro}", INTRO)
+            .replace("{intro-logo}", LOGO.replace('id="g"', 'id="dive-g"')
+                     .replace('id="h"', 'id="dive-h"').replace("url(#g)", "url(#dive-g)")
+                     .replace("url(#h)", "url(#dive-h)"))
             .replace("{style}", STYLE).replace("{script}", script))
     csp = ("default-src 'none'; "
            f"script-src {_sha(script)}; style-src {_sha(STYLE)}; "
