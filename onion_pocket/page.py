@@ -285,26 +285,28 @@ select { width:100%; font:inherit; color:var(--text); background:var(--panel2);
 STYLE += """
 /* A short, self-contained dive before pairing. All artwork is drawn here. */
 #dive { position:fixed; inset:0; z-index:100; display:grid; place-items:center;
-  overflow:hidden; background:#fff; color:#292334;
+  overflow:hidden; color:var(--text);
+  background:radial-gradient(120% 60% at 0% 0%, #7c5cff33, transparent 60%),
+    radial-gradient(90% 50% at 100% 0%, #ff4d8d24, transparent 60%), var(--bg);
   font-family:Arial, Helvetica, sans-serif; -webkit-font-smoothing:antialiased; }
-.dive-logo { position:absolute; top:max(36px, env(safe-area-inset-top));
-  left:50%; transform:translateX(-50%); display:flex; align-items:center; gap:14px;
-  white-space:nowrap; font-size:32px; font-weight:800; letter-spacing:-1px; }
-.dive-logo svg { width:64px; height:64px; flex:none;
+.dive-logo { position:absolute; top:max(40px, env(safe-area-inset-top));
+  left:50%; transform:translateX(-50%); display:flex; flex-direction:column;
+  align-items:center; gap:16px; white-space:nowrap; font-size:clamp(26px, 7vw, 32px);
+  font-weight:800; letter-spacing:-1px; }
+.dive-logo svg { width:64px; height:64px;
   filter:drop-shadow(0 4px 10px #7c5cff30); }
 .dive-logo em { font-style:normal; background:linear-gradient(90deg, #7c5cff, #ff4d8d);
   -webkit-background-clip:text; background-clip:text; color:transparent; }
-.dive-loading { position:absolute; bottom:max(88px, calc(env(safe-area-inset-bottom) + 68px));
-  left:50%; transform:translateX(-50%); width:min(260px, 70vw); text-align:center;
-  font-size:22px; font-weight:700; letter-spacing:-.4px; color:#292334; }
+.dive-loading { position:absolute; top:calc(50% + 132px);
+  left:50%; transform:translateX(-50%); width:min(260px, 70vw); }
 .dive-track { display:block; height:8px; border-radius:8px; overflow:hidden;
-  background:#eeeaf4; margin-top:16px; }
+  background:#ffffff16; }
 .dive-track i { display:block; height:100%; border-radius:inherit;
   background:linear-gradient(90deg, #7c5cff, #ff4d8d);
   transform-origin:left; animation:dive-progress 5s linear both; }
 .dive-credit { position:absolute; bottom:max(20px, env(safe-area-inset-bottom));
-  left:max(22px, env(safe-area-inset-left)); font-size:12px; font-weight:400; color:#82798e; }
-.dive-stage { width:min(360px, 85vw); }
+  left:max(22px, env(safe-area-inset-left)); font-size:12px; font-weight:400; color:var(--dim); }
+.dive-stage { width:min(360px, 90vw); }
 .dive-stage svg { display:block; width:100%; overflow:hidden; }
 .dive-bun { animation:dive-swim 4.8s ease-in-out both; transform-origin:320px 190px; }
 .dive-flipper { animation:dive-kick .48s ease-in-out infinite alternate;
@@ -313,16 +315,23 @@ STYLE += """
 .dive-right { animation:dive-right 4.8s ease-in-out both; }
 .dive-light { animation:dive-light 4.8s linear both; }
 .dive-thumb { animation:dive-thumb 4.8s ease-in-out both; transform-origin:375px 220px; }
+.dive-hand-left { animation:dive-grab-left 4.8s ease-in-out both; }
+.dive-hand-right { animation:dive-grab-right 4.8s ease-in-out both; }
 .dive-bubble { animation:dive-bubble 2.4s ease-in infinite; }
 .dive-bubble.b2 { animation-delay:-.8s; }
 .dive-bubble.b3 { animation-delay:-1.6s; }
 @keyframes dive-swim {
   0% { transform:translate(0,-25px) rotate(-8deg); }
   20% { transform:translate(-24px,10px) rotate(8deg); }
-  38%, 55% { transform:translate(0,45px) rotate(0); }
+  38%, 55% { transform:translate(0,22px) rotate(0); }
   65%, 78% { transform:translate(0,0) rotate(-4deg); }
   100% { transform:translate(480px,-130px) rotate(20deg); }
 }
+@keyframes dive-grab-left { 0%, 30% { transform:translateX(0); }
+  50%, 55% { transform:translateX(24px); } 65%, 100% { transform:translateX(0); } }
+@keyframes dive-grab-right { 0%, 30% { transform:translateX(0); opacity:1; }
+  50%, 55% { transform:translateX(-24px); opacity:1; }
+  65%, 100% { transform:translateX(0); opacity:0; } }
 @keyframes dive-kick { to { transform:rotate(22deg); } }
 @keyframes dive-progress { from { transform:scaleX(0); } to { transform:scaleX(1); } }
 @keyframes dive-left { 0%, 30% { transform:translateX(-30px); }
@@ -334,7 +343,15 @@ STYLE += """
   65%, 82% { opacity:1; transform:scale(1); } 90%, 100% { opacity:0; } }
 @keyframes dive-bubble { from { transform:translateY(30px); opacity:0; }
   20% { opacity:.7; } to { transform:translateY(-180px); opacity:0; } }
-@media (prefers-reduced-motion:reduce) { #dive * { animation:none; } }
+@media (prefers-reduced-motion:reduce) {
+  #dive * { animation:none; } .dive-hand-right { opacity:0; }
+}
+@media (max-height:520px) {
+  .dive-logo { top:max(16px, env(safe-area-inset-top)); font-size:22px; gap:8px; }
+  .dive-logo svg { width:40px; height:40px; }
+  .dive-stage { width:min(300px, 75vw); }
+  .dive-loading { top:calc(50% + 105px); }
+}
 """
 
 INTRO = """
@@ -349,6 +366,7 @@ INTRO = """
       </g>
       <g stroke="#2b2340" stroke-width="3" stroke-linejoin="round">
         <g class="dive-bun">
+          <g transform="translate(320 190) scale(1.25) translate(-320 -190)">
           <ellipse cx="364" cy="228" rx="13" ry="12" fill="#fbf7f2"/>
           <ellipse cx="320" cy="224" rx="34" ry="36" fill="#fbf7f2"/>
           <ellipse cx="320" cy="233" rx="22" ry="24" fill="#ece3da" stroke="none"/>
@@ -376,28 +394,33 @@ INTRO = """
           <ellipse cx="335" cy="183" rx="3" ry="5" fill="#2b2340" stroke="none"/>
           <path d="M316 198Q320 204 325 198M311 207Q320 214 330 206" fill="none"
             stroke-linecap="round"/>
+          <g class="dive-hand-left">
           <ellipse cx="288" cy="235" rx="11" ry="19" transform="rotate(-28 288 235)"
             fill="#fbf7f2"/>
+          </g>
+          <g class="dive-hand-right">
           <ellipse cx="351" cy="235" rx="11" ry="19" transform="rotate(28 351 235)" fill="#fbf7f2"/>
+          </g>
           <g class="dive-thumb">
             <path d="M348 224L361 213L362 200Q362 193 368 195Q373 197 369 212L383 211Q391 214
             386 230L381 238L360 238Z" fill="#fbf7f2"/>
             <path d="M362 218v15" fill="none" stroke="#ece3da"/>
           </g>
         </g>
+          </g>
         <g class="dive-left">
-          <path d="M-40 310C80 310 115 337 200 312S267 290 297 290" fill="none"
-            stroke="#121a2c" stroke-width="14"/>
-          <path d="M-40 307C80 307 115 334 200 309S267 287 297 287" fill="none"
-            stroke="#63768d" stroke-width="3"/>
+          <path d="M70 310C120 310 145 328 210 310S267 290 297 290" fill="none"
+            stroke="#485269" stroke-width="12" stroke-linecap="round"/>
+          <path d="M70 307C120 307 145 325 210 307S267 287 297 287" fill="none"
+            stroke="#93a5bd" stroke-width="3" stroke-linecap="round"/>
           <rect x="290" y="277" width="30" height="26" rx="5" fill="#9e7ce5"/>
           <path d="M311 283v14M301 283v14" stroke="#c6b0fb"/>
         </g>
         <g class="dive-right">
-          <path d="M680 310C560 310 525 337 440 312S373 290 343 290" fill="none"
-            stroke="#121a2c" stroke-width="14"/>
-          <path d="M680 307C560 307 525 334 440 309S373 287 343 287" fill="none"
-            stroke="#63768d" stroke-width="3"/>
+          <path d="M570 310C520 310 495 328 430 310S373 290 343 290" fill="none"
+            stroke="#485269" stroke-width="12" stroke-linecap="round"/>
+          <path d="M570 307C520 307 495 325 430 307S373 287 343 287" fill="none"
+            stroke="#93a5bd" stroke-width="3" stroke-linecap="round"/>
           <rect x="320" y="279" width="31" height="22" rx="4" fill="#ece3da"/>
           <path d="M337 283v14M344 283v14" stroke="#9aa0b4"/>
         </g>
@@ -405,10 +428,22 @@ INTRO = """
           <circle cx="326" cy="290" r="4" stroke="none"/>
           <path d="M312 265l-7-10M333 264l5-11M321 317v10" stroke-width="2"/>
         </g>
+        <g class="dive-bun">
+          <g transform="translate(320 190) scale(1.25) translate(-320 -190)">
+            <g class="dive-hand-left">
+              <circle cx="285" cy="251" r="9" fill="#fbf7f2"/>
+              <path d="M281 252h6" stroke="#c6bdb7" stroke-width="1.5"/>
+            </g>
+            <g class="dive-hand-right">
+              <circle cx="351" cy="251" r="9" fill="#fbf7f2"/>
+              <path d="M348 252h6" stroke="#c6bdb7" stroke-width="1.5"/>
+            </g>
+          </g>
+        </g>
       </g>
     </svg>
   </div>
-  <div class="dive-loading" role="status">Loading…
+  <div class="dive-loading" role="status" aria-label="Loading">
     <span class="dive-track" aria-hidden="true"><i></i></span>
   </div>
   <div class="dive-credit">An app by Onion Alien</div>
