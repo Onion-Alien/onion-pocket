@@ -374,6 +374,10 @@ STYLE += """
 """
 
 STYLE += """
+.dive-versions { position:absolute; right:max(22px,env(safe-area-inset-right));
+  bottom:max(20px,env(safe-area-inset-bottom)); text-align:right;
+  font:600 10px/1.65 Arial,sans-serif; color:#a99abc; }
+.dive-versions span { display:block; }
 #connection-actions { display:none; gap:10px; margin:0 16px 16px; }
 #connection-actions:has(button:not([hidden])) { display:flex; }
 #connection-actions button[hidden] { display:none; }
@@ -394,7 +398,7 @@ STYLE += """
   font:12px/1.6 Consolas,monospace; white-space:pre-wrap; overflow-wrap:anywhere; }
 .error-footer { display:flex; align-items:center; gap:12px; margin-top:16px; }
 #error-copy { background:linear-gradient(115deg,#9660ec,#c45ab0); color:white;
-  border:0; font-weight:700; padding:12px 18px; border-radius:12px;
+  border:0; font-weight:700; font-size:12px; padding:9px 13px; border-radius:10px;
   flex-shrink:0; white-space:nowrap; }
 #copy-status { font-size:12px; color:#c5b7d3; }
 @media(max-height:540px) { #error-details { padding:18px; } #error-report { height:150px; } }
@@ -551,6 +555,9 @@ INTRO = """
     <span class="dive-track" aria-hidden="true"><i></i></span>
   </div>
   <div class="dive-credit"><span>An app by</span> <strong>Onion Alien</strong></div>
+  <div class="dive-versions" aria-label="App versions">
+    <span id="dive-pocket-version"></span><span id="dive-board-version"></span>
+  </div>
 </div>
 """
 
@@ -1208,6 +1215,8 @@ function volume(step) {
 }
 
 function start() {
+  $("dive-pocket-version").textContent = "Pocket v" + BUILD.pocket;
+  $("dive-board-version").textContent = BUILD.board ? "Board v" + BUILD.board : "Board version unavailable";
   let introDone = false;
   let introTimer;
   let outcome = null, revealAt = 3000;
