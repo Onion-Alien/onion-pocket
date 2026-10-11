@@ -286,17 +286,21 @@ STYLE += """
 /* A short, self-contained dive before pairing. All artwork is drawn here. */
 #dive { position:fixed; inset:0; z-index:100; display:grid; place-items:center;
   overflow:hidden; background:#fff; color:#292334;
-  font-family:"Segoe UI", Arial, sans-serif; -webkit-font-smoothing:antialiased; }
+  font-family:Arial, Helvetica, sans-serif; -webkit-font-smoothing:antialiased; }
 .dive-logo { position:absolute; top:max(36px, env(safe-area-inset-top));
   left:50%; transform:translateX(-50%); display:flex; align-items:center; gap:14px;
-  white-space:nowrap; font-size:26px; font-weight:600; letter-spacing:-.8px; }
-.dive-logo svg { width:56px; height:56px; flex:none; }
-.dive-loading { position:absolute; bottom:max(74px, calc(env(safe-area-inset-bottom) + 54px));
-  left:50%; transform:translateX(-50%); width:144px; text-align:center;
-  font-size:13px; font-weight:400; letter-spacing:.15px; color:#746d7e; }
-.dive-track { display:block; height:3px; border-radius:3px; overflow:hidden;
-  background:#eeeaf4; margin-top:10px; }
-.dive-track i { display:block; height:100%; background:#9875e5;
+  white-space:nowrap; font-size:32px; font-weight:800; letter-spacing:-1px; }
+.dive-logo svg { width:64px; height:64px; flex:none;
+  filter:drop-shadow(0 4px 10px #7c5cff30); }
+.dive-logo em { font-style:normal; background:linear-gradient(90deg, #7c5cff, #ff4d8d);
+  -webkit-background-clip:text; background-clip:text; color:transparent; }
+.dive-loading { position:absolute; bottom:max(88px, calc(env(safe-area-inset-bottom) + 68px));
+  left:50%; transform:translateX(-50%); width:min(260px, 70vw); text-align:center;
+  font-size:22px; font-weight:700; letter-spacing:-.4px; color:#292334; }
+.dive-track { display:block; height:8px; border-radius:8px; overflow:hidden;
+  background:#eeeaf4; margin-top:16px; }
+.dive-track i { display:block; height:100%; border-radius:inherit;
+  background:linear-gradient(90deg, #7c5cff, #ff4d8d);
   transform-origin:left; animation:dive-progress 5s linear both; }
 .dive-credit { position:absolute; bottom:max(20px, env(safe-area-inset-bottom));
   left:max(22px, env(safe-area-inset-left)); font-size:12px; font-weight:400; color:#82798e; }
@@ -335,7 +339,7 @@ STYLE += """
 
 INTRO = """
 <div id="dive" aria-label="Onion Pocket opening animation">
-  <div class="dive-logo">{intro-logo}<span>Onion Pocket</span></div>
+  <div class="dive-logo">{intro-logo}<span>Onion <em>Pocket</em></span></div>
   <div class="dive-stage">
     <svg viewBox="0 0 640 400" aria-hidden="true">
       <g fill="none" stroke="#59b9c1" stroke-width="2" opacity=".7">
