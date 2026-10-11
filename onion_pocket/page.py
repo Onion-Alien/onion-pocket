@@ -1166,6 +1166,9 @@ function buildRadio() {
 async function status(options = {}) {
   try {
     st = await api("status", false, options?.signal);
+    if ($("dive-board-version") && st.version) {
+      $("dive-board-version").textContent = "Board v" + st.version;
+    }
     playing = new Set(st.playing || []);
     markPlaying();
     const live = $("live");
@@ -1216,7 +1219,8 @@ function volume(step) {
 
 function start() {
   $("dive-pocket-version").textContent = "Pocket v" + BUILD.pocket;
-  $("dive-board-version").textContent = BUILD.board ? "Board v" + BUILD.board : "Board version unavailable";
+  $("dive-board-version").textContent = BUILD.board
+    ? "Board v" + BUILD.board : "Board version unavailable";
   let introDone = false;
   let introTimer;
   let outcome = null, revealAt = 3000;
