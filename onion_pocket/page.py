@@ -305,7 +305,14 @@ STYLE += """
   background:linear-gradient(90deg, #7c5cff, #ff4d8d);
   transform-origin:left; animation:dive-progress 5s linear both; }
 .dive-credit { position:absolute; bottom:max(20px, env(safe-area-inset-bottom));
-  left:max(22px, env(safe-area-inset-left)); font-size:12px; font-weight:400; color:var(--dim); }
+  left:max(22px, env(safe-area-inset-left)); display:flex; align-items:baseline; gap:7px;
+  color:var(--dim); }
+.dive-credit span { font-size:9px; font-weight:600; text-transform:uppercase;
+  letter-spacing:1.2px; }
+.dive-credit strong { font-family:"Trebuchet MS", "Avenir Next", sans-serif;
+  font-size:13px; font-weight:700; letter-spacing:-.2px;
+  background:linear-gradient(90deg, #ae90ff, #ff80b5);
+  -webkit-background-clip:text; background-clip:text; color:transparent; }
 .dive-stage { width:min(360px, 90vw); }
 .dive-stage svg { display:block; width:100%; overflow:hidden; }
 .dive-bun { animation:dive-swim 4.8s ease-in-out both; transform-origin:320px 190px; }
@@ -314,9 +321,11 @@ STYLE += """
 .dive-left { animation:dive-left 4.8s ease-in-out both; }
 .dive-right { animation:dive-right 4.8s ease-in-out both; }
 .dive-light { animation:dive-light 4.8s linear both; }
-.dive-thumb { animation:dive-thumb 4.8s ease-in-out both; transform-origin:375px 220px; }
-.dive-hand-left { animation:dive-grab-left 4.8s ease-in-out both; }
-.dive-hand-right { animation:dive-grab-right 4.8s ease-in-out both; }
+.dive-thumb { animation:dive-thumb 4.8s ease-in-out both;
+  transform-box:fill-box; transform-origin:center bottom; }
+.dive-hand-left { transform-origin:300px 219px; animation:dive-grab-left 4.8s ease-in-out both; }
+.dive-hand-right { transform-origin:340px 219px; animation:dive-grab-right 4.8s ease-in-out both; }
+.dive-right-paw { transform-origin:351px 251px; animation:dive-wrist 4.8s ease-in-out both; }
 .dive-bubble { animation:dive-bubble 2.4s ease-in infinite; }
 .dive-bubble.b2 { animation-delay:-.8s; }
 .dive-bubble.b3 { animation-delay:-1.6s; }
@@ -327,11 +336,12 @@ STYLE += """
   65%, 78% { transform:translate(0,0) rotate(-4deg); }
   100% { transform:translate(480px,-130px) rotate(20deg); }
 }
-@keyframes dive-grab-left { 0%, 30% { transform:translateX(0); }
-  50%, 55% { transform:translateX(24px); } 65%, 100% { transform:translateX(0); } }
-@keyframes dive-grab-right { 0%, 30% { transform:translateX(0); opacity:1; }
-  50%, 55% { transform:translateX(-24px); opacity:1; }
-  65%, 100% { transform:translateX(0); opacity:0; } }
+@keyframes dive-grab-left { 0%, 30% { transform:rotate(0); }
+  50%, 55% { transform:rotate(-38deg); } 65%, 100% { transform:rotate(0); } }
+@keyframes dive-grab-right { 0%, 30% { transform:rotate(0); }
+  50%, 55% { transform:rotate(38deg); } 68%, 100% { transform:rotate(-78deg); } }
+@keyframes dive-wrist { 0%, 30% { transform:rotate(0); }
+  50%, 55% { transform:rotate(-38deg); } 68%, 100% { transform:rotate(78deg); } }
 @keyframes dive-kick { to { transform:rotate(22deg); } }
 @keyframes dive-progress { from { transform:scaleX(0); } to { transform:scaleX(1); } }
 @keyframes dive-left { 0%, 30% { transform:translateX(-30px); }
@@ -339,12 +349,14 @@ STYLE += """
 @keyframes dive-right { 0%, 30% { transform:translateX(30px); }
   50%, 100% { transform:translateX(0); } }
 @keyframes dive-light { 0%, 49% { opacity:0; } 52%, 100% { opacity:1; } }
-@keyframes dive-thumb { 0%, 58% { opacity:0; transform:scale(.5); }
-  65%, 82% { opacity:1; transform:scale(1); } 90%, 100% { opacity:0; } }
+@keyframes dive-thumb { 0%, 58% { transform:scaleY(.1); }
+  68%, 100% { transform:scaleY(1); } }
 @keyframes dive-bubble { from { transform:translateY(30px); opacity:0; }
   20% { opacity:.7; } to { transform:translateY(-180px); opacity:0; } }
 @media (prefers-reduced-motion:reduce) {
-  #dive * { animation:none; } .dive-hand-right { opacity:0; }
+  #dive * { animation:none; }
+  .dive-hand-right { transform:rotate(-78deg); }
+  .dive-right-paw { transform:rotate(78deg); }
 }
 @media (max-height:520px) {
   .dive-logo { top:max(16px, env(safe-area-inset-top)); font-size:22px; gap:8px; }
@@ -394,20 +406,9 @@ INTRO = """
           <ellipse cx="335" cy="183" rx="3" ry="5" fill="#2b2340" stroke="none"/>
           <path d="M316 198Q320 204 325 198M311 207Q320 214 330 206" fill="none"
             stroke-linecap="round"/>
-          <g class="dive-hand-left">
-          <ellipse cx="288" cy="235" rx="11" ry="19" transform="rotate(-28 288 235)"
-            fill="#fbf7f2"/>
-          </g>
-          <g class="dive-hand-right">
-          <ellipse cx="351" cy="235" rx="11" ry="19" transform="rotate(28 351 235)" fill="#fbf7f2"/>
-          </g>
-          <g class="dive-thumb">
-            <path d="M348 224L361 213L362 200Q362 193 368 195Q373 197 369 212L383 211Q391 214
-            386 230L381 238L360 238Z" fill="#fbf7f2"/>
-            <path d="M362 218v15" fill="none" stroke="#ece3da"/>
+          {badge}
           </g>
         </g>
-          </g>
         <g class="dive-left">
           <path d="M70 310C120 310 145 328 210 310S267 290 297 290" fill="none"
             stroke="#485269" stroke-width="12" stroke-linecap="round"/>
@@ -431,12 +432,24 @@ INTRO = """
         <g class="dive-bun">
           <g transform="translate(320 190) scale(1.25) translate(-320 -190)">
             <g class="dive-hand-left">
+              <path d="M300 219Q289 230 285 251" fill="none" stroke-width="18"
+                stroke-linecap="round"/>
+              <path d="M300 219Q289 230 285 251" fill="none" stroke="#fbf7f2"
+                stroke-width="12" stroke-linecap="round"/>
               <circle cx="285" cy="251" r="9" fill="#fbf7f2"/>
               <path d="M281 252h6" stroke="#c6bdb7" stroke-width="1.5"/>
             </g>
             <g class="dive-hand-right">
-              <circle cx="351" cy="251" r="9" fill="#fbf7f2"/>
-              <path d="M348 252h6" stroke="#c6bdb7" stroke-width="1.5"/>
+              <path d="M340 219Q350 230 351 251" fill="none" stroke-width="18"
+                stroke-linecap="round"/>
+              <path d="M340 219Q350 230 351 251" fill="none" stroke="#fbf7f2"
+                stroke-width="12" stroke-linecap="round"/>
+              <g class="dive-right-paw">
+                <path class="dive-thumb" d="M346 248V234Q346 228 350 228Q355 228 355 234V248Z"
+                  fill="#fbf7f2"/>
+                <circle cx="351" cy="251" r="9" fill="#fbf7f2"/>
+                <path d="M348 253h6" stroke="#c6bdb7" stroke-width="1.5"/>
+              </g>
             </g>
           </g>
         </g>
@@ -446,7 +459,7 @@ INTRO = """
   <div class="dive-loading" role="status" aria-label="Loading">
     <span class="dive-track" aria-hidden="true"><i></i></span>
   </div>
-  <div class="dive-credit">An app by Onion Alien</div>
+  <div class="dive-credit"><span>An app by</span> <strong>Onion Alien</strong></div>
 </div>
 """
 
@@ -1204,6 +1217,11 @@ def page(signed: bool = False) -> tuple[bytes, dict]:
             .replace("{intro-logo}", LOGO.replace('id="g"', 'id="dive-g"')
                      .replace('id="h"', 'id="dive-h"').replace("url(#g)", "url(#dive-g)")
                      .replace("url(#h)", "url(#dive-h)"))
+            .replace("{badge}", '<g class="dive-badge" transform="translate(310 222) scale(.2)">'
+                     + LOGO[LOGO.index(">") + 1:-6]
+                     .replace('id="g"', 'id="badge-g"').replace('id="h"', 'id="badge-h"')
+                     .replace("url(#g)", "url(#badge-g)").replace("url(#h)", "url(#badge-h)")
+                     + "</g>")
             .replace("{style}", STYLE).replace("{script}", script))
     csp = ("default-src 'none'; "
            f"script-src {_sha(script)}; style-src {_sha(STYLE)}; "
