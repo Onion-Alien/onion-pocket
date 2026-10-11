@@ -303,7 +303,7 @@ STYLE += """
   background:#ffffff16; }
 .dive-track i { display:block; height:100%; border-radius:inherit;
   background:linear-gradient(90deg, #7c5cff, #ff4d8d);
-  transform-origin:left; animation:dive-progress 5s linear both; }
+  transform-origin:left; animation:dive-progress 3s steps(1, end) both; }
 .dive-credit { position:absolute; bottom:max(20px, env(safe-area-inset-bottom));
   left:max(22px, env(safe-area-inset-left)); display:flex; align-items:baseline; gap:7px;
   color:var(--dim); }
@@ -315,17 +315,17 @@ STYLE += """
   -webkit-background-clip:text; background-clip:text; color:transparent; }
 .dive-stage { width:min(360px, 90vw); }
 .dive-stage svg { display:block; width:100%; overflow:hidden; }
-.dive-bun { animation:dive-swim 4.8s ease-in-out both; transform-origin:320px 190px; }
+.dive-bun { animation:dive-swim 2.8s ease-in-out both; transform-origin:320px 190px; }
 .dive-flipper { animation:dive-kick .48s ease-in-out infinite alternate;
   transform-box:fill-box; transform-origin:50% 0%; }
-.dive-left { animation:dive-left 4.8s ease-in-out both; }
-.dive-right { animation:dive-right 4.8s ease-in-out both; }
-.dive-light { animation:dive-light 4.8s linear both; }
-.dive-thumb { animation:dive-thumb 4.8s ease-in-out both;
+.dive-left { animation:dive-left 2.8s ease-in-out both; }
+.dive-right { animation:dive-right 2.8s ease-in-out both; }
+.dive-light { animation:dive-light 2.8s linear both; }
+.dive-thumb { animation:dive-thumb 2.8s ease-in-out both;
   transform-box:fill-box; transform-origin:center bottom; }
-.dive-hand-left { transform-origin:300px 219px; animation:dive-grab-left 4.8s ease-in-out both; }
-.dive-hand-right { transform-origin:340px 219px; animation:dive-grab-right 4.8s ease-in-out both; }
-.dive-right-paw { transform-origin:351px 251px; animation:dive-wrist 4.8s ease-in-out both; }
+.dive-hand-left { transform-origin:300px 219px; animation:dive-grab-left 2.8s ease-in-out both; }
+.dive-hand-right { transform-origin:340px 219px; animation:dive-grab-right 2.8s ease-in-out both; }
+.dive-right-paw { transform-origin:351px 251px; animation:dive-wrist 2.8s ease-in-out both; }
 .dive-bubble { animation:dive-bubble 2.4s ease-in infinite; }
 .dive-bubble.b2 { animation-delay:-.8s; }
 .dive-bubble.b3 { animation-delay:-1.6s; }
@@ -343,7 +343,11 @@ STYLE += """
 @keyframes dive-wrist { 0%, 30% { transform:rotate(0); }
   50%, 55% { transform:rotate(-38deg); } 68%, 100% { transform:rotate(78deg); } }
 @keyframes dive-kick { to { transform:rotate(22deg); } }
-@keyframes dive-progress { from { transform:scaleX(0); } to { transform:scaleX(1); } }
+@keyframes dive-progress {
+  0% { transform:scaleX(0); } 10% { transform:scaleX(.15); }
+  32% { transform:scaleX(.39); } 56% { transform:scaleX(.58); }
+  78% { transform:scaleX(.84); } 96%, 100% { transform:scaleX(1); }
+}
 @keyframes dive-left { 0%, 30% { transform:translateX(-30px); }
   50%, 100% { transform:translateX(0); } }
 @keyframes dive-right { 0%, 30% { transform:translateX(30px); }
@@ -1058,7 +1062,7 @@ function start() {
     poll();
     if (document.visibilityState === "visible") { load(); }
   });
-  introTimer = setTimeout(finishIntro, 5000);
+  introTimer = setTimeout(finishIntro, 3000);
 }
 
 start();
