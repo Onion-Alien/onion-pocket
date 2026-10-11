@@ -282,6 +282,188 @@ select { width:100%; font:inherit; color:var(--text); background:var(--panel2);
 }
 """
 
+STYLE += """
+/* A short, self-contained dive before pairing. All artwork is drawn here. */
+#dive { position:fixed; inset:0; z-index:100; display:grid; place-items:center;
+  overflow:hidden; color:var(--text);
+  background:radial-gradient(120% 60% at 0% 0%, #7c5cff33, transparent 60%),
+    radial-gradient(90% 50% at 100% 0%, #ff4d8d24, transparent 60%), var(--bg);
+  font-family:Arial, Helvetica, sans-serif; -webkit-font-smoothing:antialiased; }
+.dive-logo { position:absolute; top:max(40px, env(safe-area-inset-top));
+  left:50%; transform:translateX(-50%); display:flex; flex-direction:column;
+  align-items:center; gap:16px; white-space:nowrap; font-size:clamp(26px, 7vw, 32px);
+  font-weight:800; letter-spacing:-1px; }
+.dive-logo svg { width:64px; height:64px;
+  filter:drop-shadow(0 4px 10px #7c5cff30); }
+.dive-logo em { font-style:normal; background:linear-gradient(90deg, #7c5cff, #ff4d8d);
+  -webkit-background-clip:text; background-clip:text; color:transparent; }
+.dive-loading { position:absolute; top:calc(50% + 132px);
+  left:50%; transform:translateX(-50%); width:min(260px, 70vw); }
+.dive-track { display:block; height:8px; border-radius:8px; overflow:hidden;
+  background:#ffffff16; }
+.dive-track i { display:block; height:100%; border-radius:inherit;
+  background:linear-gradient(90deg, #7c5cff, #ff4d8d);
+  transform-origin:left; animation:dive-progress 5s linear both; }
+.dive-credit { position:absolute; bottom:max(20px, env(safe-area-inset-bottom));
+  left:max(22px, env(safe-area-inset-left)); display:flex; align-items:baseline; gap:7px;
+  color:var(--dim); }
+.dive-credit span { font-size:9px; font-weight:600; text-transform:uppercase;
+  letter-spacing:1.2px; }
+.dive-credit strong { font-family:"Trebuchet MS", "Avenir Next", sans-serif;
+  font-size:13px; font-weight:700; letter-spacing:-.2px;
+  background:linear-gradient(90deg, #ae90ff, #ff80b5);
+  -webkit-background-clip:text; background-clip:text; color:transparent; }
+.dive-stage { width:min(360px, 90vw); }
+.dive-stage svg { display:block; width:100%; overflow:hidden; }
+.dive-bun { animation:dive-swim 4.8s ease-in-out both; transform-origin:320px 190px; }
+.dive-flipper { animation:dive-kick .48s ease-in-out infinite alternate;
+  transform-box:fill-box; transform-origin:50% 0%; }
+.dive-left { animation:dive-left 4.8s ease-in-out both; }
+.dive-right { animation:dive-right 4.8s ease-in-out both; }
+.dive-light { animation:dive-light 4.8s linear both; }
+.dive-thumb { animation:dive-thumb 4.8s ease-in-out both;
+  transform-box:fill-box; transform-origin:center bottom; }
+.dive-hand-left { transform-origin:300px 219px; animation:dive-grab-left 4.8s ease-in-out both; }
+.dive-hand-right { transform-origin:340px 219px; animation:dive-grab-right 4.8s ease-in-out both; }
+.dive-right-paw { transform-origin:351px 251px; animation:dive-wrist 4.8s ease-in-out both; }
+.dive-bubble { animation:dive-bubble 2.4s ease-in infinite; }
+.dive-bubble.b2 { animation-delay:-.8s; }
+.dive-bubble.b3 { animation-delay:-1.6s; }
+@keyframes dive-swim {
+  0% { transform:translate(0,-25px) rotate(-8deg); }
+  20% { transform:translate(-24px,10px) rotate(8deg); }
+  38%, 55% { transform:translate(0,22px) rotate(0); }
+  65%, 78% { transform:translate(0,0) rotate(-4deg); }
+  100% { transform:translate(480px,-130px) rotate(20deg); }
+}
+@keyframes dive-grab-left { 0%, 30% { transform:rotate(0); }
+  50%, 55% { transform:rotate(-38deg); } 65%, 100% { transform:rotate(0); } }
+@keyframes dive-grab-right { 0%, 30% { transform:rotate(0); }
+  50%, 55% { transform:rotate(38deg); } 68%, 100% { transform:rotate(-78deg); } }
+@keyframes dive-wrist { 0%, 30% { transform:rotate(0); }
+  50%, 55% { transform:rotate(-38deg); } 68%, 100% { transform:rotate(78deg); } }
+@keyframes dive-kick { to { transform:rotate(22deg); } }
+@keyframes dive-progress { from { transform:scaleX(0); } to { transform:scaleX(1); } }
+@keyframes dive-left { 0%, 30% { transform:translateX(-30px); }
+  50%, 100% { transform:translateX(0); } }
+@keyframes dive-right { 0%, 30% { transform:translateX(30px); }
+  50%, 100% { transform:translateX(0); } }
+@keyframes dive-light { 0%, 49% { opacity:0; } 52%, 100% { opacity:1; } }
+@keyframes dive-thumb { 0%, 58% { transform:scaleY(.1); }
+  68%, 100% { transform:scaleY(1); } }
+@keyframes dive-bubble { from { transform:translateY(30px); opacity:0; }
+  20% { opacity:.7; } to { transform:translateY(-180px); opacity:0; } }
+@media (prefers-reduced-motion:reduce) {
+  #dive * { animation:none; }
+  .dive-hand-right { transform:rotate(-78deg); }
+  .dive-right-paw { transform:rotate(78deg); }
+}
+@media (max-height:520px) {
+  .dive-logo { top:max(16px, env(safe-area-inset-top)); font-size:22px; gap:8px; }
+  .dive-logo svg { width:40px; height:40px; }
+  .dive-stage { width:min(300px, 75vw); }
+  .dive-loading { top:calc(50% + 105px); }
+}
+"""
+
+INTRO = """
+<div id="dive" aria-label="Onion Pocket opening animation">
+  <div class="dive-logo">{intro-logo}<span>Onion <em>Pocket</em></span></div>
+  <div class="dive-stage">
+    <svg viewBox="0 0 640 400" aria-hidden="true">
+      <g fill="none" stroke="#59b9c1" stroke-width="2" opacity=".7">
+        <circle class="dive-bubble" cx="220" cy="280" r="5"/>
+        <circle class="dive-bubble b2" cx="420" cy="260" r="8"/>
+        <circle class="dive-bubble b3" cx="390" cy="300" r="4"/>
+      </g>
+      <g stroke="#2b2340" stroke-width="3" stroke-linejoin="round">
+        <g class="dive-bun">
+          <g transform="translate(320 190) scale(1.25) translate(-320 -190)">
+          <ellipse cx="364" cy="228" rx="13" ry="12" fill="#fbf7f2"/>
+          <ellipse cx="320" cy="224" rx="34" ry="36" fill="#fbf7f2"/>
+          <ellipse cx="320" cy="233" rx="22" ry="24" fill="#ece3da" stroke="none"/>
+          <g class="dive-flipper" fill="#a68afa">
+            <path d="M293 249Q276 260 276 280Q297 283 306 255Z"/>
+            <path d="M336 250Q350 264 354 281Q332 283 324 256Z"/>
+          </g>
+          <ellipse cx="298" cy="135" rx="13" ry="37" transform="rotate(-12 298 135)"
+            fill="#fbf7f2"/>
+          <ellipse cx="341" cy="137" rx="13" ry="35" transform="rotate(17 341 137)" fill="#fbf7f2"/>
+          <ellipse cx="298" cy="136" rx="6" ry="25" transform="rotate(-12 298 136)"
+            fill="#ffb3c7" stroke="none"/>
+          <ellipse cx="341" cy="138" rx="6" ry="23" transform="rotate(17 341 138)"
+            fill="#ffb3c7" stroke="none"/>
+          <ellipse cx="320" cy="183" rx="43" ry="37" fill="#fbf7f2"/>
+          <path d="M279 180Q273 135 320 141Q366 141 362 182" fill="none" stroke="#a68afa"
+            stroke-width="9"/>
+          <rect x="271" y="170" width="13" height="27" rx="6" fill="#a68afa"/>
+          <rect x="356" y="170" width="13" height="27" rx="6" fill="#a68afa"/>
+          <rect x="287" y="169" width="66" height="27" rx="12" fill="#83e5e4"
+            fill-opacity=".65" stroke="#386175"/>
+          <path d="M293 175l14-2M331 175l12-2" stroke="#d7ffff" stroke-width="3"
+            stroke-linecap="round"/>
+          <ellipse cx="306" cy="183" rx="3" ry="5" fill="#2b2340" stroke="none"/>
+          <ellipse cx="335" cy="183" rx="3" ry="5" fill="#2b2340" stroke="none"/>
+          <path d="M316 198Q320 204 325 198M311 207Q320 214 330 206" fill="none"
+            stroke-linecap="round"/>
+          {badge}
+          </g>
+        </g>
+        <g class="dive-left">
+          <path d="M70 310C120 310 145 328 210 310S267 290 297 290" fill="none"
+            stroke="#485269" stroke-width="12" stroke-linecap="round"/>
+          <path d="M70 307C120 307 145 325 210 307S267 287 297 287" fill="none"
+            stroke="#93a5bd" stroke-width="3" stroke-linecap="round"/>
+          <rect x="290" y="277" width="30" height="26" rx="5" fill="#9e7ce5"/>
+          <path d="M311 283v14M301 283v14" stroke="#c6b0fb"/>
+        </g>
+        <g class="dive-right">
+          <path d="M570 310C520 310 495 328 430 310S373 290 343 290" fill="none"
+            stroke="#485269" stroke-width="12" stroke-linecap="round"/>
+          <path d="M570 307C520 307 495 325 430 307S373 287 343 287" fill="none"
+            stroke="#93a5bd" stroke-width="3" stroke-linecap="round"/>
+          <rect x="320" y="279" width="31" height="22" rx="4" fill="#ece3da"/>
+          <path d="M337 283v14M344 283v14" stroke="#9aa0b4"/>
+        </g>
+        <g class="dive-light" stroke="#79f5ce" fill="#79f5ce">
+          <circle cx="326" cy="290" r="4" stroke="none"/>
+          <path d="M312 265l-7-10M333 264l5-11M321 317v10" stroke-width="2"/>
+        </g>
+        <g class="dive-bun">
+          <g transform="translate(320 190) scale(1.25) translate(-320 -190)">
+            <g class="dive-hand-left">
+              <path d="M300 219Q289 230 285 251" fill="none" stroke-width="18"
+                stroke-linecap="round"/>
+              <path d="M300 219Q289 230 285 251" fill="none" stroke="#fbf7f2"
+                stroke-width="12" stroke-linecap="round"/>
+              <circle cx="285" cy="251" r="9" fill="#fbf7f2"/>
+              <path d="M281 252h6" stroke="#c6bdb7" stroke-width="1.5"/>
+            </g>
+            <g class="dive-hand-right">
+              <path d="M340 219Q350 230 351 251" fill="none" stroke-width="18"
+                stroke-linecap="round"/>
+              <path d="M340 219Q350 230 351 251" fill="none" stroke="#fbf7f2"
+                stroke-width="12" stroke-linecap="round"/>
+              <g class="dive-right-paw">
+                <path class="dive-thumb" d="M346 248V234Q346 228 350 228Q355 228 355 234V248Z"
+                  fill="#fbf7f2"/>
+                <circle cx="351" cy="251" r="9" fill="#fbf7f2"/>
+                <path d="M348 253h6" stroke="#c6bdb7" stroke-width="1.5"/>
+              </g>
+            </g>
+          </g>
+        </g>
+      </g>
+    </svg>
+  </div>
+  <div class="dive-loading" role="status" aria-label="Loading">
+    <span class="dive-track" aria-hidden="true"><i></i></span>
+  </div>
+  <div class="dive-credit"><span>An app by</span> <strong>Onion Alien</strong></div>
+</div>
+"""
+
+
 SCRIPT = """
 "use strict";
 const $ = (id) => document.getElementById(id);
@@ -844,6 +1026,16 @@ function volume(step) {
 }
 
 function start() {
+  let introDone = false;
+  let introTimer;
+  function finishIntro() {
+    if (introDone) { return; }
+    introDone = true;
+    clearTimeout(introTimer);
+    $("dive").remove();
+    $("pocket-app").inert = false;
+    load(); poll();
+  }
   const m = /[#&]k=([A-Za-z0-9_-]+)/.exec(location.hash);
   if (m) {
     key = m[1]; store(key);
@@ -862,10 +1054,11 @@ function start() {
   buildSound();
   buildRadio();
   document.addEventListener("visibilitychange", () => {
+    if (!introDone) { return; }
     poll();
     if (document.visibilityState === "visible") { load(); }
   });
-  load(); poll();
+  introTimer = setTimeout(finishIntro, 5000);
 }
 
 start();
@@ -888,6 +1081,8 @@ BODY = """<!doctype html>
 <style>{style}</style>
 </head>
 <body>
+{intro}
+<div id="pocket-app" inert>
 <header>
   <div class="brand">
     {logo}
@@ -1003,6 +1198,7 @@ BODY = """<!doctype html>
         <circle cx="19" cy="13" r="2.2"/></svg>Sound</button>
   </div>
 </nav>
+</div>
 <script>{script}</script>
 </body>
 </html>
@@ -1017,7 +1213,15 @@ def page(signed: bool = False) -> tuple[bytes, dict]:
     """(body, headers) for host.server(page=…). `signed`: the board takes X-Sig, so
     the script signs requests instead of sending the key."""
     script = SCRIPT.replace("{signed}", "true" if signed else "false")
-    html = (BODY.replace("{icon}", ICON).replace("{logo}", LOGO)
+    html = (BODY.replace("{icon}", ICON).replace("{logo}", LOGO).replace("{intro}", INTRO)
+            .replace("{intro-logo}", LOGO.replace('id="g"', 'id="dive-g"')
+                     .replace('id="h"', 'id="dive-h"').replace("url(#g)", "url(#dive-g)")
+                     .replace("url(#h)", "url(#dive-h)"))
+            .replace("{badge}", '<g class="dive-badge" transform="translate(310 222) scale(.2)">'
+                     + LOGO[LOGO.index(">") + 1:-6]
+                     .replace('id="g"', 'id="badge-g"').replace('id="h"', 'id="badge-h"')
+                     .replace("url(#g)", "url(#badge-g)").replace("url(#h)", "url(#badge-h)")
+                     + "</g>")
             .replace("{style}", STYLE).replace("{script}", script))
     csp = ("default-src 'none'; "
            f"script-src {_sha(script)}; style-src {_sha(STYLE)}; "
