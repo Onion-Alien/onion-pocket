@@ -42,6 +42,15 @@ def test_the_key_leaves_the_address_bar():
     assert "history.replaceState" in page.SCRIPT and '"X-Token": key' in page.SCRIPT
 
 
+def test_diagnostic_versions_cannot_break_out_of_the_inline_script():
+    body, headers = page.page(True, '</script><script>alert("version")</script>', 1)
+    html = body.decode()
+    assert html.count("<script>") == 1 and html.count("</script>") == 1
+    script = re.search(r"<script>(.*)</script>", html, re.S).group(1)
+    assert f"script-src {_sha(script)};" in headers["Content-Security-Policy"]
+    assert "{build}" not in script and r"\u003c/script>" in script
+
+
 def test_signed_or_not_each_page_allows_exactly_its_own_script():
     for signed in (False, True):
         body, headers = page.page(signed)

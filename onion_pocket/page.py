@@ -20,7 +20,10 @@ from __future__ import annotations
 
 import base64
 import hashlib
+import json
 from urllib.parse import quote
+
+from . import __version__
 
 # Onion Board's mark (soundboard/theme.py paint_logo) on a 100 x 100 grid: a
 # gradient squircle holding an onion whose layers read as sound waves.
@@ -303,7 +306,7 @@ STYLE += """
   background:#ffffff16; }
 .dive-track i { display:block; height:100%; border-radius:inherit;
   background:linear-gradient(90deg, #7c5cff, #ff4d8d);
-  transform-origin:left; animation:dive-progress 5s linear both; }
+  transform-origin:left; animation:dive-progress-pending 3s steps(1, end) both; }
 .dive-credit { position:absolute; bottom:max(20px, env(safe-area-inset-bottom));
   left:max(22px, env(safe-area-inset-left)); display:flex; align-items:baseline; gap:7px;
   color:var(--dim); }
@@ -315,17 +318,17 @@ STYLE += """
   -webkit-background-clip:text; background-clip:text; color:transparent; }
 .dive-stage { width:min(360px, 90vw); }
 .dive-stage svg { display:block; width:100%; overflow:hidden; }
-.dive-bun { animation:dive-swim 4.8s ease-in-out both; transform-origin:320px 190px; }
+.dive-bun { animation:dive-wait 2.8s ease-in-out both; transform-origin:320px 190px; }
 .dive-flipper { animation:dive-kick .48s ease-in-out infinite alternate;
   transform-box:fill-box; transform-origin:50% 0%; }
-.dive-left { animation:dive-left 4.8s ease-in-out both; }
-.dive-right { animation:dive-right 4.8s ease-in-out both; }
-.dive-light { animation:dive-light 4.8s linear both; }
-.dive-thumb { animation:dive-thumb 4.8s ease-in-out both;
+.dive-left { animation:dive-left 2.8s ease-in-out both; }
+.dive-right { animation:dive-right 2.8s ease-in-out both; }
+.dive-light { animation:dive-light 2.8s linear both; }
+.dive-thumb { animation:dive-thumb 2.8s ease-in-out both;
   transform-box:fill-box; transform-origin:center bottom; }
-.dive-hand-left { transform-origin:300px 219px; animation:dive-grab-left 4.8s ease-in-out both; }
-.dive-hand-right { transform-origin:340px 219px; animation:dive-grab-right 4.8s ease-in-out both; }
-.dive-right-paw { transform-origin:351px 251px; animation:dive-wrist 4.8s ease-in-out both; }
+.dive-hand-left { transform-origin:300px 219px; animation:dive-grab-left 2.8s ease-in-out both; }
+.dive-hand-right { transform-origin:340px 219px; animation:dive-grab-right 2.8s ease-in-out both; }
+.dive-right-paw { transform-origin:351px 251px; animation:dive-wrist 2.8s ease-in-out both; }
 .dive-bubble { animation:dive-bubble 2.4s ease-in infinite; }
 .dive-bubble.b2 { animation-delay:-.8s; }
 .dive-bubble.b3 { animation-delay:-1.6s; }
@@ -343,7 +346,11 @@ STYLE += """
 @keyframes dive-wrist { 0%, 30% { transform:rotate(0); }
   50%, 55% { transform:rotate(-38deg); } 68%, 100% { transform:rotate(78deg); } }
 @keyframes dive-kick { to { transform:rotate(22deg); } }
-@keyframes dive-progress { from { transform:scaleX(0); } to { transform:scaleX(1); } }
+@keyframes dive-progress-complete {
+  0% { transform:scaleX(0); } 10% { transform:scaleX(.15); }
+  32% { transform:scaleX(.39); } 56% { transform:scaleX(.58); }
+  78% { transform:scaleX(.84); } 96%, 100% { transform:scaleX(1); }
+}
 @keyframes dive-left { 0%, 30% { transform:translateX(-30px); }
   50%, 100% { transform:translateX(0); } }
 @keyframes dive-right { 0%, 30% { transform:translateX(30px); }
@@ -363,6 +370,89 @@ STYLE += """
   .dive-logo svg { width:40px; height:40px; }
   .dive-stage { width:min(300px, 75vw); }
   .dive-loading { top:calc(50% + 105px); }
+}
+"""
+
+STYLE += """
+.dive-versions { position:absolute; right:max(22px,env(safe-area-inset-right));
+  bottom:max(20px,env(safe-area-inset-bottom)); text-align:right;
+  font:600 10px/1.65 Arial,sans-serif; color:#a99abc; }
+.dive-versions span { display:block; }
+#connection-actions { display:none; gap:10px; margin:0 16px 16px; }
+#connection-actions:has(button:not([hidden])) { display:flex; }
+#connection-actions button[hidden] { display:none; }
+#error-details { width:min(520px,calc(100vw - 32px)); box-sizing:border-box;
+  max-height:calc(100dvh - 32px); overflow:auto; border:1px solid #51405f;
+  border-radius:24px; padding:24px; color:#f4efff; background:#191322;
+  box-shadow:0 24px 80px #0009; font-family:Arial,sans-serif; }
+#error-details::backdrop { background:#090610b8; backdrop-filter:blur(7px); }
+.error-heading { display:flex; align-items:start; justify-content:space-between; gap:12px; }
+.error-heading h2 { margin:5px 0 12px; font-size:25px; letter-spacing:-.6px;
+  text-transform:none; color:#f4efff; }
+.error-kicker { color:#d29aff; font-weight:700; font-size:11px; letter-spacing:1.8px; }
+#error-close { border-radius:50%; width:36px; height:36px; padding:0; font-size:24px; }
+#error-summary { margin:0 0 16px; color:#c5b7d3; font-size:14px; line-height:1.5; }
+#error-report { display:block; box-sizing:border-box; width:100%; height:260px;
+  min-height:130px; resize:vertical; background:#100c18; color:#ded3ed;
+  border:1px solid #40324f; border-radius:12px; padding:14px;
+  font:12px/1.6 Consolas,monospace; white-space:pre-wrap; overflow-wrap:anywhere; }
+.error-footer { display:flex; align-items:center; gap:12px; margin-top:16px; }
+#error-copy { background:linear-gradient(115deg,#9660ec,#c45ab0); color:white;
+  border:0; font-weight:700; font-size:12px; padding:9px 13px; border-radius:10px;
+  flex-shrink:0; white-space:nowrap; }
+#copy-status { font-size:12px; color:#c5b7d3; }
+@media(max-height:540px) { #error-details { padding:18px; } #error-report { height:150px; } }
+.dive-x-eyes { opacity:0; }
+#dive:not(.connected) .dive-left { animation:none; transform:translateX(-30px); }
+#dive:not(.connected) .dive-right { animation:none; transform:translateX(30px); }
+#dive:not(.connected) .dive-light { animation:none; opacity:0; }
+#dive:not(.connected) .dive-hand-left,
+#dive:not(.connected) .dive-hand-right,
+#dive:not(.connected) .dive-right-paw { animation:none; transform:rotate(0); }
+#dive:not(.connected) .dive-thumb { animation:none; transform:scaleY(.1); }
+#dive.connected .dive-bun { animation-name:dive-swim; }
+#dive.connected .dive-track i { animation-name:dive-progress-complete;
+  animation-delay:var(--dive-progress-delay, 0ms); }
+#dive.connected .dive-bun, #dive.connected .dive-left, #dive.connected .dive-right,
+#dive.connected .dive-hand-left, #dive.connected .dive-hand-right,
+#dive.connected .dive-right-paw, #dive.connected .dive-thumb, #dive.connected .dive-light,
+#dive.failed .dive-bun, #dive.failed .dive-eyes, #dive.failed .dive-x-eyes {
+  animation-delay:var(--dive-delay, 0ms); }
+#dive.failed .dive-bun { animation-name:dive-sink; }
+#dive.failed .dive-hand-right { animation:dive-down-arm 2.8s ease-in-out both;
+  animation-delay:var(--dive-delay, 0ms); }
+#dive.failed .dive-right-paw { animation:dive-down-wrist 2.8s ease-in-out both;
+  animation-delay:var(--dive-delay, 0ms); }
+#dive.failed .dive-thumb { animation:dive-thumb 2.8s ease-in-out both;
+  animation-delay:var(--dive-delay, 0ms); }
+#dive.failed .dive-eyes { animation:dive-shut 2.8s steps(1, end) both;
+  animation-delay:var(--dive-delay, 0ms); }
+#dive.failed .dive-x-eyes { animation:dive-cross 2.8s steps(1, end) both;
+  animation-delay:var(--dive-delay, 0ms); }
+#dive.failed .dive-track i { background:linear-gradient(90deg, #ff826f, #ff4d8d); }
+@keyframes dive-wait { 0% { transform:translate(0,-25px) rotate(-8deg); }
+  20% { transform:translate(-24px,10px) rotate(8deg); }
+  38%, 100% { transform:translate(0,22px); } }
+@keyframes dive-sink { 0% { transform:translate(0,-25px) rotate(-8deg); opacity:1; }
+  20% { transform:translate(-24px,10px) rotate(8deg); }
+  38%, 68% { transform:translate(0,22px); }
+  80% { transform:translate(0,36px) rotate(4deg); opacity:1; }
+  100% { transform:translate(0,180px) rotate(14deg); opacity:0; } }
+@keyframes dive-down-arm { 0%, 38% { transform:rotate(0); }
+  68%, 100% { transform:rotate(-78deg); } }
+@keyframes dive-down-wrist { 0%, 38% { transform:rotate(0); }
+  68%, 100% { transform:rotate(-102deg); } }
+@keyframes dive-shut { 0% { opacity:1; } 75%, 100% { opacity:0; } }
+@keyframes dive-cross { 0% { opacity:0; } 75%, 100% { opacity:1; } }
+@keyframes dive-progress-pending {
+  0% { transform:scaleX(0); } 10% { transform:scaleX(.15); }
+  32% { transform:scaleX(.39); } 56% { transform:scaleX(.58); }
+  78%, 100% { transform:scaleX(.84); }
+}
+@media (prefers-reduced-motion:reduce) {
+  #dive * { animation:none !important; }
+  #dive.failed .dive-eyes { opacity:0; }
+  #dive.failed .dive-x-eyes { opacity:1; }
 }
 """
 
@@ -402,8 +492,13 @@ INTRO = """
             fill-opacity=".65" stroke="#386175"/>
           <path d="M293 175l14-2M331 175l12-2" stroke="#d7ffff" stroke-width="3"
             stroke-linecap="round"/>
+          <g class="dive-eyes">
           <ellipse cx="306" cy="183" rx="3" ry="5" fill="#2b2340" stroke="none"/>
           <ellipse cx="335" cy="183" rx="3" ry="5" fill="#2b2340" stroke="none"/>
+          </g>
+          <g class="dive-x-eyes" fill="none" stroke-linecap="round">
+            <path d="M302 179l8 8M310 179l-8 8M331 179l8 8M339 179l-8 8"/>
+          </g>
           <path d="M316 198Q320 204 325 198M311 207Q320 214 330 206" fill="none"
             stroke-linecap="round"/>
           {badge}
@@ -460,6 +555,9 @@ INTRO = """
     <span class="dive-track" aria-hidden="true"><i></i></span>
   </div>
   <div class="dive-credit"><span>An app by</span> <strong>Onion Alien</strong></div>
+  <div class="dive-versions" aria-label="App versions">
+    <span id="dive-pocket-version"></span><span id="dive-board-version"></span>
+  </div>
 </div>
 """
 
@@ -552,13 +650,77 @@ function stored() { try { return localStorage.getItem("ob-key") || ""; }
 function say(text) { $("msg").textContent = text || ""; }
 function state(cls, text) { $("dot").className = "dot " + cls; $("state").textContent = text; }
 
-async function api(path, again) {
+const BUILD = {build};
+let faults = [], attempts = 0, pairingSecret = "";
+function safeDetail(value, limit = 16000) {
+  let text = String(value ?? "");
+  for (const secret of [key, pairingSecret]) {
+    if (secret) { text = text.split(secret).join("[redacted]"); }
+  }
+  text = text.replace(/([#?&]k=)[^\\s&]+/g, "$1[redacted]")
+    .replace(/(X-Token|X-Sig|Authorization)(\\s*[:=]\\s*)[^\\r\\n]+/gi, "$1$2[redacted]");
+  return text.length > limit ? text.slice(0, limit) + " [details truncated]" : text;
+}
+function fault(error, endpoint = "Browser page", code = "Unavailable", elapsed = 0, detail = "") {
+  if (error?.pocketRecorded) { return; }
+  if (error && typeof error === "object") { error.pocketRecorded = true; }
+  faults.push({ time:new Date().toISOString(), endpoint:safeDetail(endpoint), code,
+    elapsed:Math.round(elapsed), name:error?.name || "Error",
+    message:safeDetail(error?.message || error), stack:safeDetail(error?.stack || "Not supplied"),
+    detail:safeDetail(detail) });
+  faults = faults.slice(-8);
+  $("error-view").hidden = false;
+}
+function errorReport() {
+  const lines = ["ONION POCKET — CONNECTION REPORT", "", "Captured: " + new Date().toISOString(),
+    "Onion Pocket: " + BUILD.pocket,
+    "Page build: connection-intro-v2",
+    "Onion Board: " + (st?.version || BUILD.board || "Unavailable"),
+    "Host API: " + (BUILD.api || "Unavailable"), "Page: " + location.origin + location.pathname,
+    "Browser: " + navigator.userAgent, "Viewport: " + innerWidth + " × " + innerHeight,
+    "Online hint: " + navigator.onLine + " (does not confirm PC access)",
+    "Authentication: " + (SIGNED ? "Signed request" : "Token request"),
+    "Paired: " + Boolean(key), "Load attempts: " + attempts, ""];
+  faults.forEach((f, i) => lines.push("FAILURE " + (i + 1) + " / " + f.time,
+    "Request / location: " + f.endpoint, "HTTP status: " + f.code,
+    "Duration: " + f.elapsed + " ms", f.name + ": " + f.message,
+    "Server details: " + (f.detail || "Not supplied"),
+    "Browser stack / file / line:", f.stack, ""));
+  lines.push("Backend crash file / traceback: not exposed by Onion Board's API.",
+    "For internal server errors, match the timestamp above to Onion Board's desktop log.",
+    "Pairing keys and authentication headers are excluded. Review before sharing.");
+  return safeDetail(lines.join("\\n"), 150000);
+}
+function showError() {
+  $("error-report").value = errorReport();
+  $("error-summary").textContent = faults.at(-1)?.message || "The connection could not complete.";
+  $("copy-status").textContent = "Select or copy the report to share it.";
+  if (!$("error-details").open) { $("error-details").showModal(); }
+}
+async function copyError() {
+  const text = $("error-report").value;
+  try {
+    if (!navigator.clipboard?.writeText) { throw new Error("Clipboard unavailable"); }
+    await navigator.clipboard.writeText(text);
+    $("copy-status").textContent = "Report copied.";
+  } catch (e) {
+    $("error-report").focus(); $("error-report").select();
+    let copied = false;
+    try { copied = document.execCommand("copy"); } catch (e) {}
+    $("error-report").scrollTop = 0; $("error-report").scrollLeft = 0;
+    $("copy-status").textContent = copied ? "Report copied." : "Report selected. Hold to copy.";
+  }
+}
+
+async function api(path, again, signal) {
   const url = "/api/" + path, used = skew;
+  const begun = performance.now();
   let r;
   try {
-    r = await fetch(url, { method: "POST", cache: "no-store",
+    r = await fetch(url, { method: "POST", cache: "no-store", signal,
                            headers: SIGNED ? { "X-Sig": sign(url) } : { "X-Token": key } });
   } catch (e) {
+    fault(e, "POST " + url, "No response", performance.now() - begun);
     state("off", "Can't reach the PC");
     say("Can't reach Onion Board. Is it running, with Onion Pocket on, and is " +
         "this phone on the same Wi-Fi?");
@@ -570,19 +732,34 @@ async function api(path, again) {
       const b = await r.json().catch(() => null);
       const s = b && Number.isFinite(b.now) ? b.now - Math.floor(Date.now() / 1000) : skew;
       // (`used`: requests sent together all retry, not just the first one back)
-      if (Math.abs(s - used) > 30) { skew = s; return api(path, true); }
+      if (Math.abs(s - used) > 30) { skew = s; return api(path, true, signal); }
     }
+    const error = new Error("Pairing expired or rejected. Scan Onion Pocket's QR code again.");
+    fault(error, "POST " + url, 401, performance.now() - begun);
     key = ""; store("");
     state("off", "Not paired");
     say("This phone isn't paired (or the PC made a new key). Scan the QR code in " +
         "Onion Board: Settings, Remote, Onion Pocket.");
     drawPads();
-    throw new Error("unpaired");
+    throw error;
   }
   if (r.status === 429) { say("Too many wrong keys from this phone: wait a minute."); }
   const body = await r.json().catch(() => null);
   if (!r.ok && body && body.error && r.status !== 429) { say(body.error); }
-  if (!r.ok) { throw new Error(String(r.status)); }
+  if (!r.ok) {
+    const error = new Error(body?.error || "HTTP " + r.status + " " + r.statusText);
+    const detail = body ? JSON.stringify(Object.fromEntries(
+      ["error", "detail", "message", "traceback", "file", "line"].filter(k => k in body)
+        .map(k => [k, body[k]])), null, 2) : "No JSON error body returned";
+    fault(error, "POST " + url, r.status, performance.now() - begun, detail);
+    state("off", "Connection failed");
+    throw error;
+  }
+  if (body === null) {
+    const error = new Error("The PC returned an empty or invalid JSON response.");
+    fault(error, "POST " + url, r.status, performance.now() - begun);
+    throw error;
+  }
   return body;
 }
 
@@ -986,9 +1163,12 @@ function buildRadio() {
 }
 
 // ------------------------------------------------------------------ status, start
-async function status() {
+async function status(options = {}) {
   try {
-    st = await api("status");
+    st = await api("status", false, options?.signal);
+    if ($("dive-board-version") && st.version) {
+      $("dive-board-version").textContent = "Board v" + st.version;
+    }
     playing = new Set(st.playing || []);
     markPlaying();
     const live = $("live");
@@ -999,20 +1179,32 @@ async function status() {
     drawLive(st);
     drawMode(st.mode);
     drawRadio(st.radio);
-  } catch (e) {}
+    return true;
+  } catch (e) { fault(e); return false; }
 }
 
-async function load() {
-  if (!key) { state("", "Not paired"); drawPads(); return; }
+async function load(options = {}) {
+  attempts++;
+  if (!key) {
+    state("", "Not paired"); drawPads();
+    fault(new Error("This phone is not paired. Scan Onion Pocket's QR code in Onion Board."));
+    return false;
+  }
   try {
-    const [list, names] = await Promise.all([api("sounds"), api("categories")]);
+    const [list, names] = await Promise.all([
+      api("sounds", false, options?.signal), api("categories", false, options?.signal)]);
     sounds = list || [];
     cats = names || [];
     if (cat && !cats.includes(cat)) { cat = ""; }
-    say(""); drawChips(); drawPads(); await status();
+    say(""); drawChips(); drawPads();
+    if (!await status(options)) { return false; }
     if (view === "radio") { loadStations(); }
     if (view === "sound") { loadSound(); }
-  } catch (e) {}
+    $("retry").hidden = true;
+    $("error-view").hidden = true;
+    $("error-details").close();
+    return true;
+  } catch (e) { fault(e); return false; }
 }
 
 function poll() {
@@ -1026,15 +1218,39 @@ function volume(step) {
 }
 
 function start() {
+  $("dive-pocket-version").textContent = "Pocket v" + BUILD.pocket;
+  $("dive-board-version").textContent = BUILD.board
+    ? "Board v" + BUILD.board : "Board version unavailable";
   let introDone = false;
   let introTimer;
+  let outcome = null, revealAt = 3000;
+  const started = performance.now(), controller = new AbortController();
+  function result(ok) {
+    if (introDone || outcome !== null) { return; }
+    outcome = ok;
+    const elapsed = performance.now() - started;
+    const poseTime = Math.min(elapsed, ok ? 1800 : 1900);
+    const dive = $("dive");
+    dive.style.setProperty("--dive-delay", "-" + poseTime + "ms");
+    dive.style.setProperty("--dive-progress-delay", "-" + elapsed + "ms");
+    dive.classList.add(ok ? "connected" : "failed");
+    revealAt = Math.max(3000, elapsed + 2800 - poseTime);
+  }
   function finishIntro() {
     if (introDone) { return; }
+    if (outcome === null) {
+      controller.abort(new DOMException(
+        "The PC did not finish loading within 3 seconds.", "TimeoutError"));
+      result(false);
+    }
+    const remaining = revealAt - (performance.now() - started);
+    if (remaining > 10) { introTimer = setTimeout(finishIntro, remaining); return; }
     introDone = true;
     clearTimeout(introTimer);
     $("dive").remove();
     $("pocket-app").inert = false;
-    load(); poll();
+    $("retry").hidden = outcome || !key;
+    poll();
   }
   const m = /[#&]k=([A-Za-z0-9_-]+)/.exec(location.hash);
   if (m) {
@@ -1043,6 +1259,7 @@ function start() {
   } else {
     key = stored();
   }
+  pairingSecret = key;
   $("stop").addEventListener("click", () => api("stop").then(status, () => {}));
   $("live").addEventListener("click", () => api("live?on=toggle").then(status, () => {}));
   $("down").addEventListener("click", () => volume("down"));
@@ -1053,12 +1270,42 @@ function start() {
   }
   buildSound();
   buildRadio();
+  $("error-view").addEventListener("click", showError);
+  $("error-close").addEventListener("click", () => $("error-details").close());
+  $("error-copy").addEventListener("click", copyError);
+  $("error-details").addEventListener("click", e => {
+    if (e.target === $("error-details")) {
+      const box = e.target.getBoundingClientRect();
+      if (e.clientX < box.left || e.clientX > box.right ||
+          e.clientY < box.top || e.clientY > box.bottom) {
+        e.target.close();
+      }
+    }
+  });
+  $("retry").addEventListener("click", async () => {
+    clearInterval(timer);
+    const button = $("retry"), retryController = new AbortController();
+    button.disabled = true; button.textContent = "Connecting…";
+    const timeout = setTimeout(() => retryController.abort(
+      new DOMException("The PC did not respond within 8 seconds.", "TimeoutError")), 8000);
+    try {
+      const ok = await load({ signal:retryController.signal });
+      button.hidden = ok || !key;
+      if (!ok) { showError(); }
+    } finally {
+      clearTimeout(timeout); button.disabled = false; button.textContent = "Try again"; poll();
+    }
+  });
+  window.addEventListener("error", e => fault(e.error || new Error(e.message),
+    (e.filename || "Browser page") + ":" + e.lineno + ":" + e.colno));
+  window.addEventListener("unhandledrejection", e => fault(e.reason));
   document.addEventListener("visibilitychange", () => {
     if (!introDone) { return; }
     poll();
     if (document.visibilityState === "visible") { load(); }
   });
-  introTimer = setTimeout(finishIntro, 5000);
+  introTimer = setTimeout(finishIntro, 3000);
+  load({ signal:controller.signal }).then(result);
 }
 
 start();
@@ -1101,6 +1348,20 @@ BODY = """<!doctype html>
   </div>
 </header>
 <div id="msg" role="status"></div>
+<div id="connection-actions">
+  <button id="retry" hidden>Try again</button>
+  <button id="error-view" hidden>Error details</button>
+</div>
+<dialog id="error-details" aria-labelledby="error-title" aria-describedby="error-summary">
+  <div class="error-heading"><div><span class="error-kicker">CONNECTION REPORT</span>
+    <h2 id="error-title">Let's find the problem.</h2></div>
+    <button id="error-close" aria-label="Close error details" autofocus>&times;</button></div>
+  <p id="error-summary"></p>
+  <textarea id="error-report" readonly spellcheck="false"
+    aria-label="Full diagnostic report"></textarea>
+  <div class="error-footer"><button id="error-copy">Copy report</button>
+    <span id="copy-status" role="status"></span></div>
+</dialog>
 <main id="pads"></main>
 
 <section id="radio" class="view" hidden>
@@ -1209,10 +1470,12 @@ def _sha(text: str) -> str:
     return "'sha256-" + base64.b64encode(hashlib.sha256(text.encode()).digest()).decode() + "'"
 
 
-def page(signed: bool = False) -> tuple[bytes, dict]:
+def page(signed: bool = False, board_version: str = "", api_version: int = 0) -> tuple[bytes, dict]:
     """(body, headers) for host.server(page=…). `signed`: the board takes X-Sig, so
     the script signs requests instead of sending the key."""
-    script = SCRIPT.replace("{signed}", "true" if signed else "false")
+    build = json.dumps({"pocket": __version__, "board": board_version, "api": api_version})
+    script = (SCRIPT.replace("{signed}", "true" if signed else "false")
+              .replace("{build}", build.replace("<", "\\u003c")))
     html = (BODY.replace("{icon}", ICON).replace("{logo}", LOGO).replace("{intro}", INTRO)
             .replace("{intro-logo}", LOGO.replace('id="g"', 'id="dive-g"')
                      .replace('id="h"', 'id="dive-h"').replace("url(#g)", "url(#dive-g)")

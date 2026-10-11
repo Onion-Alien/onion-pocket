@@ -31,7 +31,8 @@ def answered(pocket):
 def test_it_asks_for_a_short_list_and_serves_its_page(host):
     pocket = addon.create(host)
     srv, = host.servers
-    assert srv.actions == addon.ACTIONS and srv.page == page.page()
+    assert srv.actions == addon.ACTIONS
+    assert srv.page == page.page(False, "", host.api_version)
     assert not {"mic", "voice", "replay", "help"} & set(srv.actions)   # never these
     assert set(addon.ACTIONS) <= set(host.actions)
     assert not srv.running and host.warned == [] and host.settings == {}   # off by default
@@ -296,4 +297,5 @@ def test_a_board_that_checks_signatures_gets_the_signing_page(host):
     host.signed_requests = True
     addon.create(host)
     srv = host.servers[-1]
-    assert srv.page == page.page(True) and b"const SIGNED = true;" in srv.page[0]
+    assert srv.page == page.page(True, "", host.api_version)
+    assert b"const SIGNED = true;" in srv.page[0]

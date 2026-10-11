@@ -98,7 +98,9 @@ class _Relay(QObject):
 class Pocket:
     def __init__(self, host):
         self.host = host
-        self.server = host.server(offered(host), page.page(signed(host)), "Onion Pocket")
+        self.server = host.server(offered(host), page.page(
+            signed(host), getattr(host, "app_version", ""), getattr(host, "api_version", 0)),
+            "Onion Pocket")
         self._relay = _Relay()
         self.asking: threading.Thread | None = None   # waiting on Windows' admin prompt
         err = self.apply()
