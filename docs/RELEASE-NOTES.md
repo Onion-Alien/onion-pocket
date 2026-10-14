@@ -1,3 +1,5 @@
+**0.2.3: a short intro, and sideways phones scroll.** Opening the page plays a three-second intro while it checks it can reach your PC: Bun dives in and plugs in the cable. If the PC can't be reached, the cable sparks, the page says why and offers *Try again* and a report you can copy. Turned sideways, the phone page no longer gets stuck at the top: the header scrolls away and the buttons at the bottom fold into one thin row, so the pads have room.
+
 **0.2.2: your key stays on your phone.** With Onion Board 1.9.4 or newer the phone no longer sends its key over the Wi-Fi with every tap. It signs each tap with the key instead, and Onion Board takes each signature only once, so someone reading your Wi-Fi's traffic can't copy the key or replay a tap. A phone whose clock is a few minutes off still works. With an older Onion Board it works as before.
 
 **0.2.1:** opening Settings → Remote no longer flashes a small blank window up on the desktop for a moment (the *Let it through Windows Firewall…* button showed before it was part of the card).

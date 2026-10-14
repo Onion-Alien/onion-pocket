@@ -283,6 +283,22 @@ select { width:100%; font:inherit; color:var(--text); background:var(--panel2);
 @media (min-width: 560px) {
   main { grid-template-columns:repeat(auto-fill, minmax(128px, 1fr)); }
 }
+/* Sideways phones: a pinned header plus the two-row dock filled the whole screen and
+   left nothing to scroll. Let the header scroll away and fold the dock into one row. */
+@media (max-height: 500px) {
+  header { position:static; padding-top:max(10px, env(safe-area-inset-top, 0px)); }
+  .dock { flex-direction:row; align-items:center; gap:8px;
+    padding:6px max(12px, env(safe-area-inset-right, 0px)) calc(6px + var(--safe-b))
+      max(12px, env(safe-area-inset-left, 0px)); }
+  .dock .row { flex:1; min-width:0; }
+  #stop, #ract, #reset { min-height:42px; }
+  .vol { padding:2px; }
+  .vol button { min-height:38px; width:38px; }
+  .tabs { flex:none; margin:0; gap:4px; }
+  .tab { flex:none; flex-direction:row; gap:6px; min-height:42px; padding:6px 12px; }
+  .tab svg { width:20px; height:20px; }
+  body.tabbed main, .view { padding-bottom:calc(72px + var(--safe-b)); }
+}
 """
 
 STYLE += """
