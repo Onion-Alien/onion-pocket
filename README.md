@@ -11,33 +11,49 @@
   <a href="https://github.com/Onion-Alien/onion-board">Onion Board</a>.<br>
   Scan a QR code on the PC and tap a pad on your phone: it plays on the PC, into
   Discord or your game like any pad.<br>
-  Run the radio and change the speed, pitch, bass and effects from your phone too.<br>
+  Queue sounds, run the radio, change the speed and effects, switch your voice
+  changer, type a line for others to hear, and send Spotify into the call, from your
+  phone too.<br>
   iPhone or Android, nothing to install on the phone.
 </p>
 
 | On the PC: Settings → Remote | On the phone |
 |---|---|
-| ![Onion Pocket's card on Settings → Remote, with the QR code](docs/screenshots/settings.png) | <img src="docs/screenshots/phone.png" width="300" alt="The phone page: Onion Board's logo, category chips, colourful pads (two playing, with a white ring and level bars), Stop all and the volume, and the Pads, Radio and Sound tabs at the bottom"> |
+| ![Onion Pocket's card on Settings → Remote, with the QR code](docs/screenshots/settings.png) | <img src="docs/screenshots/phone.png" width="300" alt="The phone page: Onion Board's logo, category chips, colourful pads (two playing, with a white ring and level bars), Stop all and the volume, and the Pads, Radio, Sound, Voice and Apps tabs at the bottom"> |
 
 | Radio | Sound |
 |---|---|
 | <img src="docs/screenshots/radio.png" width="300" alt="The Radio tab: the station playing with Random, Star, Live and Hear it myself, your Favorites, Recent and Popular stations, a search box, and Stop radio with the radio's volume"> | <img src="docs/screenshots/sound.png" width="300" alt="The Sound tab: speed slider with quick speeds, keep pitch, pitch, and the effects (bass, treble, muffle, reverb, echo, distortion) with Reset all"> |
 
+| Voice | Apps |
+|---|---|
+| <img src="docs/screenshots/voice.png" width="300" alt="The Voice tab: the voice changer switch with the voices as chips and Random voice, a Say it box with Say it and Stop, and My mic: others hear my mic, mute my mic while a sound plays, hear what they hear"> | <img src="docs/screenshots/apps.png" width="300" alt="The Apps tab: Spotify, YouTube in Edge and VLC, each with Others hear it or Only me and a volume slider; VLC is not running"> |
+
 ## What your phone can do
 
-- **Pads:** tap to play, by category or search, *Stop all*, the volume, and
-  *Live / Muted* (mute you for everyone).
+- **Pads:** tap to play, by category or search, *Stop all*, *Pause*, the volume, and
+  *Live / Muted* (mute you for everyone). *Tap: queue it* makes a tap play that sound
+  after the ones playing now; *Play all* / *Shuffle all* queue a whole category, *Up
+  next* shows what's coming (*Clear* empties it). *Random*, *Again* (the last sound)
+  and *Save replay* (the last seconds you heard, as a new sound).
 - **Radio:** play and stop the radio, your *Favorites*, *Recent* and *Popular*
   stations or a search, a random station, star a station, *Live* (others hear the
   radio) or *Only me*, *Hear it myself*, and the radio's volume.
 - **Sound:** the live speed (with the 0.5x–2x quick speeds) and pitch, *Keep pitch*,
   bass, treble, muffle, reverb, echo and distortion, the presets (*Bass boosted*,
   *Underwater*, *Phone call*…), *Reset all*, and *Who's listening* (Discord, Steam
-  voice, Vivox…).
+  voice, Vivox…), and *Hotkeys on* (off: the PC's keys type normally again).
+- **Voice:** the voice changer on / off, pick a voice or a random one, *Say it* (type
+  a line, others hear it in the computer voice), *Others hear my mic*, *Mute my mic
+  while a sound plays*, *Hear what they hear*, and your saved voice combos.
+- **Apps:** the programs on Onion Board's Apps tab: *Others hear it* sends that
+  program's sound (Spotify, a video) to whoever's listening, with its own volume.
 
 Whatever the phone changes moves on the PC too: the same sliders and buttons. The
-Radio and Sound tabs need Onion Board 1.7.2 or newer; with an older one the phone
-shows the pads.
+Radio and Sound tabs need Onion Board 1.7.2 or newer, the queue and the Voice tab
+1.9.24, the Apps tab, voice combos and *Hotkeys on* 2.5.0; with an older one the
+phone shows what that board has. A tab switched off in Onion Board's Settings → Tabs
+stays off on the phone.
 
 ## How it works
 
@@ -53,9 +69,9 @@ so the PC still does the playing ([docs/PHONE.md](docs/PHONE.md) has the researc
   with its own key (in the QR code; separate from the Stream Deck key). *Forget
   phones* makes a new key. An address that gets the key wrong 5 times is ignored
   for a minute.
-- **Never your mic.** A phone can play your pads, run the radio and change the live
-  speed, pitch and effects (the list above). Never the mic, the voice changer, the
-  instant replay, or anything that reads or saves files.
+- **Only the buttons above.** A phone can do what the list above says, nothing more:
+  it can turn your mic on or off for others, but never hear it, and it never reads
+  or sends files (*Save replay* only keeps the last seconds as a sound on the PC).
 - **Plain HTTP on your Wi-Fi.** Someone on the same network who can read its
   traffic could take the key and play your sounds. Use it at home, not on public
   Wi-Fi. [SECURITY.md](SECURITY.md) has the details.
@@ -97,7 +113,7 @@ builds the zip and publishes the release Onion Board downloads from.
 | `scripts/check_sensitive.py` | secrets / personal-data scan, also the pre-commit hook |
 | `tests/` | offscreen tests against a stand-in host (`tests/fakehost.py`) |
 | `docs/PHONE.md` | the research (what phones can and can't do) and the design |
-| `scripts/demo_page.py` | the phone page in your browser with made-up sounds, no Onion Board needed; `--shot` remakes `docs/screenshots/phone.png` |
+| `scripts/demo_page.py` | the phone page in your browser with made-up sounds, no Onion Board needed; `--shot` remakes `docs/screenshots/phone.png` (`--view voice`, `--size 780x360`…) |
 | `.github/workflows/checks.yml` | on every push: the secrets / personal-data scan over the whole history, gitleaks, ruff and the tests |
 | `.github/workflows/release.yml` | on a `v*` tag: the checks, then the add-on zip published as a GitHub release |
 

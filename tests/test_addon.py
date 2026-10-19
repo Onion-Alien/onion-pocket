@@ -32,8 +32,9 @@ def test_it_asks_for_a_short_list_and_serves_its_page(host):
     pocket = addon.create(host)
     srv, = host.servers
     assert srv.actions == addon.ACTIONS
-    assert srv.page == page.page(False, "", host.api_version)
-    assert not {"mic", "voice", "replay", "help"} & set(srv.actions)   # never these
+    assert srv.page == page.page(False, "", host.api_version, srv.actions)
+    # never the stream bots' chat and alerts (a phone isn't a chat), never help
+    assert not {"chat", "chat_rules", "event", "alerts", "feed", "help"} & set(srv.actions)
     assert set(addon.ACTIONS) <= set(host.actions)
     assert not srv.running and host.warned == [] and host.settings == {}   # off by default
     assert pocket.host is host and API_VERSION == host.api_version
@@ -47,6 +48,7 @@ def test_an_older_board_gets_only_the_actions_it_has(host):
     srv, = host.servers
     assert srv.actions == tuple(a for a in addon.ACTIONS if a in OLD_ACTIONS)
     assert "play" in srv.actions and "radio" not in srv.actions and "speed" not in srv.actions
+    assert "voice" in srv.actions and "voices" not in srv.actions and "apps" not in srv.actions
 
 
 def test_it_starts_only_when_on_and_on_a_network(host, monkeypatch):
@@ -297,5 +299,5 @@ def test_a_board_that_checks_signatures_gets_the_signing_page(host):
     host.signed_requests = True
     addon.create(host)
     srv = host.servers[-1]
-    assert srv.page == page.page(True, "", host.api_version)
+    assert srv.page == page.page(True, "", host.api_version, srv.actions)
     assert b"const SIGNED = true;" in srv.page[0]

@@ -32,9 +32,11 @@ pre-commit hook: `git config core.hooksPath .githooks`.
   anything else.
 - It reaches Onion Board only through the host (`onion_pocket/host.py`). Anything
   it needs from the app is added to the host on Onion Board's side
-  (`soundboard/ui/remotehost.py`) first, with `API_VERSION` raised when the
+  (`soundboard/ui/settings/remotehost.py`) first, with `API_VERSION` raised when the
   contract changes.
-- Never widen what a phone can do (`addon.ACTIONS`) to the mic, the voice changer
-  or anything that reads files, without the author's say-so.
+- Never widen what a phone can do (`addon.ACTIONS`) beyond what README's *What your
+  phone can do* lists (the mic switch, the voice changer and the replay were added
+  with the author's say-so in 0.3.0), and never to the chat / alert actions, hearing
+  the mic or anything that reads files, without the author's say-so.
 - Don't launch Onion Board or anything that opens windows without asking first.
 - Edit files with UTF-8-safe tools (Windows PowerShell 5.1 mangles UTF-8).

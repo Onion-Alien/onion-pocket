@@ -274,6 +274,40 @@ select { width:100%; font:inherit; color:var(--text); background:var(--panel2);
 .note { color:var(--dim); font-size:13px; margin:0 2px 8px; }
 .note:empty { display:none; }
 
+.acts { padding-top:2px; }
+body.queueing .pad { outline:2px dashed #ffffffa0; outline-offset:-7px; }
+.upnext { display:flex; align-items:center; gap:8px; padding:2px 0 6px; font-size:13.5px; }
+.upnext .kicker { flex:none; color:var(--ok); }
+#qlist { flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.upnext .chip { min-height:30px; padding:4px 12px; }
+#pause { flex:none; width:54px; min-height:50px; padding:0; border-radius:14px;
+  display:flex; align-items:center; justify-content:center; }
+#pause::before { content:""; width:5px; height:16px; border-radius:1.5px; background:currentColor;
+  box-shadow:9px 0 0 currentColor; margin-right:9px; }
+#pause.paused::before { width:0; height:0; margin:0 0 0 4px; border-radius:0; box-shadow:none;
+  background:none; border-style:solid; border-width:9px 0 9px 15px;
+  border-color:transparent transparent transparent currentColor; }
+#vol.hot { color:var(--warn); }
+#voices { padding-top:10px; }
+.vbtn { width:100%; margin-top:8px; }
+#saytext { display:block; width:100%; resize:none; font:inherit; color:var(--text);
+  background:var(--panel2); border:1px solid var(--line); border-radius:12px; padding:10px 12px;
+  margin-bottom:10px; -webkit-user-select:text; user-select:text; }
+#saytext::placeholder { color:var(--dim); }
+#saytext:focus { outline:none; border-color:#7c5cff99; }
+#vsay .row button { flex:1; }
+.go { font-weight:700; color:#fff; background:linear-gradient(135deg, var(--accent), #9b6bff);
+  box-shadow:0 6px 18px #7c5cff44; }
+.applist { list-style:none; margin:0; padding:0; }
+.app .head { align-items:center; }
+.app .head b { font-size:16px; min-width:0; overflow:hidden; text-overflow:ellipsis;
+  white-space:nowrap; }
+.app.idle .head b { color:var(--dim); }
+.app .send { width:100%; }
+.appvol { display:flex; align-items:center; gap:10px; margin-top:4px; }
+.appvol output { flex:none; width:52px; text-align:right; font-weight:700;
+  font-variant-numeric:tabular-nums; font-size:14px; }
+
 @keyframes eq { 0%, 100% { height:30%; } 50% { height:100%; } }
 @keyframes hit { from { opacity:.35; } to { opacity:0; } }
 @keyframes beat { 0%, 100% { opacity:1; } 50% { opacity:.35; } }
@@ -291,11 +325,11 @@ select { width:100%; font:inherit; color:var(--text); background:var(--panel2);
     padding:6px max(12px, env(safe-area-inset-right, 0px)) calc(6px + var(--safe-b))
       max(12px, env(safe-area-inset-left, 0px)); }
   .dock .row { flex:1; min-width:0; }
-  #stop, #ract, #reset { min-height:42px; }
+  #stop, #ract, #reset, #pause { min-height:42px; }
   .vol { padding:2px; }
   .vol button { min-height:38px; width:38px; }
   .tabs { flex:none; margin:0; gap:4px; }
-  .tab { flex:none; flex-direction:row; gap:6px; min-height:42px; padding:6px 12px; }
+  .tab { flex:none; flex-direction:row; gap:6px; min-height:42px; padding:6px 10px; }
   .tab svg { width:20px; height:20px; }
   body.tabbed main, .view { padding-bottom:calc(72px + var(--safe-b)); }
 }
@@ -618,6 +652,8 @@ let key = "", sounds = [], cats = [], cat = "", query = "";
 let playing = new Set(), timer = 0;
 let view = "pads", st = {}, knobs = null, modes = null;
 let rlist = "", rquery = "", rpoll = 0, rtries = 0, rtimer = 0;
+let queueMode = false, voices = null, voiceOff = false, setups = null;
+let apps = null, appsOff = false;   // the Apps tab's programs; off: switched off on the PC
 const held = {};       // control id -> until when the status mustn't move it (a thumb on it)
 const QUICK = [0.5, 0.75, 1, 1.25, 1.5, 2];
 const SIGNED = {signed};   // the board checks signatures: the key never goes over the Wi-Fi
@@ -700,6 +736,8 @@ function say(text) { $("msg").textContent = text || ""; }
 function state(cls, text) { $("dot").className = "dot " + cls; $("state").textContent = text; }
 
 const BUILD = {build};
+// what the board offers this page (an older board lacks the newer ones): no button for the rest
+function can(a) { return !BUILD.actions || BUILD.actions.includes(a); }
 let faults = [], attempts = 0, pairingSecret = "";
 function safeDetail(value, limit = 16000) {
   let text = String(value ?? "");
@@ -761,7 +799,7 @@ async function copyError() {
   }
 }
 
-async function api(path, again, signal) {
+async function api(path, again, signal, quiet) {
   const url = "/api/" + path, used = skew;
   const begun = performance.now();
   let r;
@@ -781,7 +819,7 @@ async function api(path, again, signal) {
       const b = await r.json().catch(() => null);
       const s = b && Number.isFinite(b.now) ? b.now - Math.floor(Date.now() / 1000) : skew;
       // (`used`: requests sent together all retry, not just the first one back)
-      if (Math.abs(s - used) > 30) { skew = s; return api(path, true, signal); }
+      if (Math.abs(s - used) > 30) { skew = s; return api(path, true, signal, quiet); }
     }
     const error = new Error("Pairing expired or rejected. Scan Onion Pocket's QR code again.");
     fault(error, "POST " + url, 401, performance.now() - begun);
@@ -794,7 +832,17 @@ async function api(path, again, signal) {
   }
   if (r.status === 429) { say("Too many wrong keys from this phone: wait a minute."); }
   const body = await r.json().catch(() => null);
+  if (quiet && !r.ok && r.status !== 429) {   // the board answered: "that's off", not a fault
+    const error = new Error(body?.error || "HTTP " + r.status);
+    error.status = r.status;
+    throw error;
+  }
   if (!r.ok && body && body.error && r.status !== 429) { say(body.error); }
+  if (!r.ok && r.status >= 400 && r.status < 500 && r.status !== 429 && body?.error) {
+    const error = new Error(body.error);   // "nothing has played yet": shown, still connected
+    error.status = r.status;
+    throw error;
+  }
   if (!r.ok) {
     const error = new Error(body?.error || "HTTP " + r.status + " " + r.statusText);
     const detail = body ? JSON.stringify(Object.fromEntries(
@@ -840,7 +888,7 @@ function drawChips() {
     n.textContent = String(name ? sounds.filter((s) => (s.categories || []).includes(name)).length
                                 : sounds.length);
     b.appendChild(n);
-    b.addEventListener("click", () => { cat = name; drawChips(); drawPads(); });
+    b.addEventListener("click", () => { cat = name; drawChips(); drawPads(); drawActs(); });
     box.appendChild(b);
   }
 }
@@ -906,48 +954,116 @@ async function play(id, b) {
   if (navigator.vibrate) { navigator.vibrate(12); }
   b.classList.remove("hit"); void b.offsetWidth; b.classList.add("hit");
   try {
+    if (queueMode) {
+      const a = await api("queue?id=" + q(id));
+      say("");
+      if (a.playing) { playing.add(id); markPlaying(); }
+      st.queue = a.queue || []; drawQueue();
+      return;
+    }
     await api("play?id=" + q(id));
     say(""); playing.add(id); markPlaying();
   } catch (e) {}
 }
 
+// ------------------------------------------------------------------ pads: actions, queue
+function drawActs() {
+  const box = $("acts");
+  const queue = can("queue") && st.queue !== undefined;
+  $("qmode").hidden = !queue;
+  $("qall").hidden = $("qshuf").hidden = !queue || !cat;
+  $("arandom").hidden = !can("random");
+  $("alast").hidden = !can("last");
+  $("areplay").hidden = !can("replay");
+  if (!queue && queueMode) { queueMode = false; }
+  press($("qmode"), queueMode);
+  $("qmode").textContent = queueMode ? "Tap: queue it" : "Tap: play now";
+  document.body.classList.toggle("queueing", queueMode);
+  box.hidden = !key || ![...box.children].some((b) => !b.hidden);
+}
+
+function drawQueue() {
+  const list = st.queue || [];
+  $("upnext").hidden = !list.length;
+  $("qlist").textContent = list.slice(0, 3).map((s) => s.name).join(", ") +
+                           (list.length > 3 ? " +" + (list.length - 3) : "");
+}
+
+function buildPads() {
+  $("qmode").addEventListener("click", () => { queueMode = !queueMode; drawActs(); });
+  for (const [id, shuffle] of [["qall", false], ["qshuf", true]]) {
+    $(id).addEventListener("click", () => {
+      if (!cat) { return; }
+      api("queue?category=" + q(cat) + (shuffle ? "&shuffle=1" : ""))
+        .then((a) => { say(""); st.queue = a.queue || []; drawQueue(); status(); }, () => {});
+    });
+  }
+  $("qclear").addEventListener("click", () =>
+    api("queue?clear=1").then((a) => { st.queue = a.queue || []; drawQueue(); }, () => {}));
+  $("arandom").addEventListener("click", () => {
+    if (navigator.vibrate) { navigator.vibrate(12); }
+    api("random?category=" + q(cat)).then(() => { say(""); status(); }, () => {});
+  });
+  $("alast").addEventListener("click", () =>
+    api("last").then(() => { say(""); status(); }, () => {}));
+  $("areplay").addEventListener("click", () => {
+    const b = $("areplay");
+    api("replay").then(() => { say(""); flash(b, "Saved as a sound"); load(); }, () => {});
+  });
+}
+
+function flash(b, text) {        // a button says what it did for a moment
+  if (!b.dataset.label) { b.dataset.label = b.textContent; }
+  b.textContent = "\\u2713 " + text;
+  clearTimeout(b._flash);
+  b._flash = setTimeout(() => { b.textContent = b.dataset.label; }, 1800);
+}
+
 // ------------------------------------------------------------------ tabs
+const VIEWS = ["pads", "radio", "sound", "voice", "apps"];
 function hasRadio() { return !!st.radio; }
 function hasSound() { return st.speed !== undefined; }
+function hasVoice() { return can("voice") && st.voice !== undefined; }
+function hasApps() { return can("apps") && !appsOff; }
 
 function drawTabs() {
-  const radio = hasRadio(), sound = hasSound();
-  $("tab-radio").hidden = !radio;
-  $("tab-sound").hidden = !sound;
-  $("tabs").hidden = !radio && !sound;
-  document.body.classList.toggle("tabbed", radio || sound);
-  if ((view === "radio" && !radio) || (view === "sound" && !sound)) { show("pads"); }
+  const has = {pads: true, radio: hasRadio(), sound: hasSound(), voice: hasVoice(),
+               apps: hasApps()};
+  for (const name of VIEWS.slice(1)) { $("tab-" + name).hidden = !has[name]; }
+  const tabbed = VIEWS.slice(1).some((name) => has[name]);
+  $("tabs").hidden = !tabbed;
+  document.body.classList.toggle("tabbed", tabbed);
+  if (!has[view]) { show("pads"); }
 }
 
 function show(v) {
   view = v;
-  for (const name of ["pads", "radio", "sound"]) {
+  for (const name of VIEWS) {
     $("tab-" + name).classList.toggle("sel", name === v);
     $("tab-" + name).setAttribute("aria-selected", name === v ? "true" : "false");
+    $(name).hidden = name !== v;
   }
-  $("pads").hidden = v !== "pads";
   $("padhead").hidden = v !== "pads";
-  $("radio").hidden = v !== "radio";
-  $("sound").hidden = v !== "sound";
-  $("stop").hidden = v !== "pads";
+  $("stop").hidden = v === "radio" || v === "sound";
+  $("pause").hidden = !can("pause") || v === "radio" || v === "sound";
   $("ract").hidden = v !== "radio";
   $("reset").hidden = v !== "sound";
   $("vlabel").textContent = v === "radio" ? "Radio" : "Sounds";
   drawVolume();
   if (v === "radio") { loadStations(); }
   if (v === "sound") { loadSound(); }
+  if (v === "voice") { loadVoice(); }
+  if (v === "apps") { loadApps(); }
   window.scrollTo(0, 0);
 }
 
 function drawVolume() {
   const r = st.radio || {};
-  const v = Math.max(0, Math.min(100, num(view === "radio" ? r.volume : st.volume, 0)));
+  // newer boards go up to 1000% (100: normal)
+  const v = Math.max(0, Math.min(1000, Math.round(num(view === "radio" ? r.volume
+                                                                       : st.volume, 0))));
   $("vol").textContent = v + "%";
+  $("vol").classList.toggle("hot", v > 100);
   $("volbar").style.width = Math.min(100, v) + "%";
 }
 
@@ -1089,6 +1205,192 @@ function drawMode(key) {
   $("modenote").textContent = d ? d.note || "" : "";
 }
 
+// ------------------------------------------------------------------ voice tab
+function ask(path) { return api(path, false, undefined, true); }
+
+async function loadVoice() {
+  if (can("voices")) {
+    try { voices = await ask("voices"); voiceOff = false; }
+    catch (e) { if (e.status === 409) { voiceOff = true; } }
+  }
+  if (can("setups")) {
+    try { setups = await ask("setups"); } catch (e) { setups = null; }
+  }
+  drawVoices(); drawVoice(); drawSetups();
+}
+
+function drawVoices() {
+  const box = $("voices");
+  box.replaceChildren();
+  for (const v of (voices && voices.voices) || []) {
+    const b = document.createElement("button");
+    b.className = "chip"; b.dataset.name = v.name;
+    b.textContent = v.shown || v.name;
+    b.addEventListener("click", () => {
+      if (navigator.vibrate) { navigator.vibrate(12); }
+      hold("voice");
+      const off = st.voice && st.voice_name === v.name;   // the one on: tap again for off
+      send(off ? "voice?on=0" : "voice?name=" + q(v.name)).then(voiceSet, () => {});
+    });
+    box.appendChild(b);
+  }
+}
+
+function voiceSet(a) {
+  st.voice = !!a.voice; st.voice_name = a.voice_name || ""; held.voice = 0; drawVoice();
+}
+
+function drawVoice() {
+  $("voff").hidden = !voiceOff;
+  $("vchanger").hidden = voiceOff;
+  $("vsay").hidden = voiceOff || !can("say");
+  $("vrandom").hidden = !can("setups");     // ?random=1 came with combos (older: a flip)
+  if (free("voice")) {
+    press($("vpower"), !!st.voice);
+    for (const b of $("voices").children) {
+      b.classList.toggle("sel", !!st.voice && b.dataset.name === st.voice_name);
+    }
+  }
+  const mic = st.mic !== undefined && can("mic"), hear = st.hear !== undefined && can("hear");
+  const gate = st.mic_gate !== undefined && can("mic_gate");
+  $("vmiccard").hidden = !mic && !hear && !gate;
+  $("vmic").hidden = !mic; press($("vmic"), !!st.mic);
+  $("vhear").hidden = !hear; press($("vhear"), !!st.hear);
+  $("vgate").hidden = !gate; press($("vgate"), !!st.mic_gate);
+}
+
+function drawSetups() {
+  const list = (setups && setups.setups) || [];
+  $("vcombos").hidden = !list.length || !can("setup");
+  const box = $("combos");
+  box.replaceChildren();
+  const on = (setups && setups.on && setups.on.sounds) || "";
+  for (const name of ["", ...list]) {
+    const b = document.createElement("button");
+    b.className = "chip" + (name === on ? " sel" : "");
+    b.textContent = name || "None";
+    b.addEventListener("click", () =>
+      send("setup?tab=sounds&name=" + q(name)).then((a) => { setups = a; drawSetups(); },
+                                                      () => {}));
+    box.appendChild(b);
+  }
+}
+
+function flipSt(id, action, field) {
+  $(id).addEventListener("click", () => {
+    hold(id);
+    send(action + "?on=toggle").then((a) => {
+      held[id] = 0; st[field] = !!a[field]; drawVoice(); drawPc();
+    }, () => {});
+  });
+}
+
+function buildVoice() {
+  $("vpower").addEventListener("click", () => {
+    hold("voice");
+    send("voice?on=toggle").then(voiceSet, () => {});
+  });
+  $("vrandom").addEventListener("click", () => {
+    hold("voice");
+    send("voice?random=1").then(voiceSet, () => {});
+  });
+  flipSt("vmic", "mic", "mic");
+  flipSt("vhear", "hear", "hear");
+  flipSt("vgate", "mic_gate", "mic_gate");
+  flipSt("hotkeys", "hotkeys", "hotkeys");
+  const speak = () => {
+    const text = $("saytext").value.trim();
+    if (!text) { $("saytext").focus(); return; }
+    api("say?text=" + q(text)).then(() => { say(""); flash($("saygo"), "Saying it"); },
+                                    () => {});
+  };
+  $("saygo").addEventListener("click", speak);
+  $("saytext").addEventListener("keydown", (e) => {
+    if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); speak(); }
+  });
+  $("saystop").addEventListener("click", () => api("say?stop=1").catch(() => {}));
+}
+
+// the Sound tab's "On the PC" card
+function drawPc() {
+  const hk = st.hotkeys !== undefined && can("hotkeys");
+  $("pccard").hidden = !hk;
+  if (hk && free("hotkeys")) { press($("hotkeys"), !!st.hotkeys); }
+}
+
+// ------------------------------------------------------------------ apps: send a program's sound
+async function loadApps() {
+  if (!can("apps")) { return; }
+  try { apps = await ask("apps"); appsOff = false; }
+  catch (e) { if (e.status === 409) { appsOff = true; drawTabs(); } return; }
+  drawApps();
+}
+
+function drawApps() {
+  const list = $("applist");
+  if (!apps) { return; }
+  const ids = apps.map((a) => a.exe).join("|");
+  if (list.dataset.ids !== ids) {      // new programs: build the rows again
+    list.dataset.ids = ids;
+    list.replaceChildren(...apps.map(appRow));
+  }
+  for (const a of apps) {
+    const row = list.querySelector('[data-exe="' + CSS.escape(a.exe) + '"]');
+    if (!row) { continue; }
+    const b = row.querySelector(".send"), r = row.querySelector("input");
+    row.querySelector("span").textContent = a.running ? "Running" : "Not running";
+    row.classList.toggle("idle", !a.running);
+    b.disabled = !a.running && !a.sending;
+    if (free("app:" + a.exe)) {
+      press(b, !!a.sending);
+      b.textContent = a.sending ? "Others hear it" : "Only me";
+    }
+    if (free(r.id)) {
+      r.value = Math.min(200, num(a.volume, 100));
+      row.querySelector("output").textContent = Math.round(num(a.volume, 100)) + "%";
+    }
+  }
+  $("appnote").textContent = apps.length ? ""
+    : "No programs yet: add them on the PC, Onion Board's Apps tab.";
+}
+
+function appGot(x) {             // the board's answer about one program, into the list showing
+  const cur = (apps || []).find((y) => y.exe === x.exe);
+  if (cur) { Object.assign(cur, x); }
+}
+
+function appRow(a) {
+  const li = document.createElement("li");
+  li.className = "card app"; li.dataset.exe = a.exe;
+  const top = document.createElement("div");
+  top.className = "head";
+  const n = document.createElement("b");
+  n.textContent = a.name || a.exe;
+  const sub = document.createElement("span");
+  sub.className = "kicker";
+  top.append(n, sub);
+  const b = document.createElement("button");
+  b.className = "toggle send"; b.setAttribute("aria-pressed", "false");
+  b.addEventListener("click", () => {
+    hold("app:" + a.exe);
+    send("app?name=" + q(a.exe) + "&send=toggle").then((x) => {
+      held["app:" + a.exe] = 0; appGot(x); drawApps();
+    }, () => {});
+  });
+  const id = "appvol-" + a.exe.replace(/[^A-Za-z0-9_-]/g, "_");
+  const r = document.createElement("input");
+  r.type = "range"; r.id = id; r.min = 0; r.max = 200; r.step = 5;
+  r.setAttribute("aria-label", "Volume of " + (a.name || a.exe));
+  const out = document.createElement("output");
+  slider(r, (v) => send("app?name=" + q(a.exe) + "&volume=" + v).then(appGot, () => {}),
+         (v) => { out.textContent = Math.round(v) + "%"; });
+  const vol = document.createElement("div");
+  vol.className = "appvol";
+  vol.append(r, out);
+  li.append(top, b, vol);
+  return li;
+}
+
 // ------------------------------------------------------------------ radio
 function drawRadio(r) {
   if (!r) { return; }
@@ -1223,11 +1525,21 @@ async function status(options = {}) {
     const live = $("live");
     live.textContent = st.live ? "Live" : "Muted";
     live.className = st.live ? "on" : "off";
+    const pause = $("pause");
+    pause.classList.toggle("paused", !!st.paused);
+    pause.setAttribute("aria-label", st.paused ? "Resume" : "Pause");
+    press(pause, !!st.paused);
+    pause.hidden = !can("pause") || view === "radio" || view === "sound";
     drawTabs();
     drawVolume();
     drawLive(st);
     drawMode(st.mode);
     drawRadio(st.radio);
+    drawActs();
+    drawQueue();
+    drawVoice();
+    drawPc();
+    if (view === "apps") { loadApps(); }
     return true;
   } catch (e) { fault(e); return false; }
 }
@@ -1249,6 +1561,8 @@ async function load(options = {}) {
     if (!await status(options)) { return false; }
     if (view === "radio") { loadStations(); }
     if (view === "sound") { loadSound(); }
+    if (view === "voice") { loadVoice(); }
+    if (can("apps") && apps === null && !appsOff) { loadApps().then(drawTabs); }
     $("retry").hidden = true;
     $("error-view").hidden = true;
     $("error-details").close();
@@ -1310,15 +1624,18 @@ function start() {
   }
   pairingSecret = key;
   $("stop").addEventListener("click", () => api("stop").then(status, () => {}));
+  $("pause").addEventListener("click", () => api("pause").then(status, () => {}));
   $("live").addEventListener("click", () => api("live?on=toggle").then(status, () => {}));
   $("down").addEventListener("click", () => volume("down"));
   $("up").addEventListener("click", () => volume("up"));
   $("find").addEventListener("input", (e) => { query = e.target.value; drawPads(); });
-  for (const name of ["pads", "radio", "sound"]) {
+  for (const name of VIEWS) {
     $("tab-" + name).addEventListener("click", () => show(name));
   }
+  buildPads();
   buildSound();
   buildRadio();
+  buildVoice();
   $("error-view").addEventListener("click", showError);
   $("error-close").addEventListener("click", () => $("error-details").close());
   $("error-copy").addEventListener("click", copyError);
@@ -1394,6 +1711,22 @@ BODY = """<!doctype html>
         autocomplete="off" enterkeyhint="search">
     </div>
     <div id="chips" class="chips" hidden></div>
+    <div id="acts" class="chips acts" hidden>
+      <button id="qmode" class="chip toggle" aria-pressed="false" hidden
+        title="Tap a pad to play it after the ones playing now">Tap: play now</button>
+      <button id="arandom" class="chip" hidden
+        title="Play a random sound from this category">&#x1F3B2; Random</button>
+      <button id="alast" class="chip" hidden
+        title="Play the last sound again">&#x21BB; Again</button>
+      <button id="qall" class="chip" hidden
+        title="Play every sound here, one after another">&#x25B6;&#xFE0E; Play all</button>
+      <button id="qshuf" class="chip" hidden
+        title="Play every sound here in a random order">&#x1F500; Shuffle all</button>
+      <button id="areplay" class="chip" hidden
+        title="Save the last seconds you heard as a new sound">&#x23FA;&#xFE0E; Save replay</button>
+    </div>
+    <div id="upnext" class="upnext" hidden><span class="kicker">Up next</span>
+      <span id="qlist"></span><button id="qclear" class="chip">Clear</button></div>
   </div>
 </header>
 <div id="msg" role="status"></div>
@@ -1470,13 +1803,59 @@ BODY = """<!doctype html>
     <select id="mode" aria-label="Who's listening"></select>
     <p id="modenote" class="hint"></p>
   </div>
+  <div id="pccard" class="card" hidden>
+    <div class="head"><h2>On the PC</h2></div>
+    <button id="hotkeys" class="switch" aria-pressed="true">Hotkeys on</button>
+    <p class="hint">Off: the PC's keys type normally again, no sound plays from them.</p>
+  </div>
   <p class="hint">Speed, pitch and effects change every sound while it plays, like the
     speed button on the PC's Sounds tab: your sounds themselves stay as they are.</p>
+</section>
+
+<section id="voice" class="view" hidden>
+  <div id="voff" class="empty" hidden><span class="big">&#x1F3A4;</span>
+    <strong>The Voice tab is off on the PC</strong>It's switched off in Onion Board's
+    Settings, Tabs.</div>
+  <div id="vchanger" class="card">
+    <div class="head"><h2>Voice changer</h2></div>
+    <button id="vpower" class="switch" aria-pressed="false">Change my voice</button>
+    <div id="voices" class="chips wrap"></div>
+    <button id="vrandom" class="vbtn" hidden>&#x1F3B2; Random voice</button>
+  </div>
+  <div id="vsay" class="card">
+    <div class="head"><h2>Say it</h2></div>
+    <textarea id="saytext" rows="2" maxlength="500" placeholder="Type a line for others to hear"
+      aria-label="Line to say" enterkeyhint="send"></textarea>
+    <div class="row"><button id="saygo" class="go">Say it</button>
+      <button id="saystop">Stop</button></div>
+    <p class="hint">Others hear it in the Voice tab's computer voice (changed, if the
+      voice changer is on).</p>
+  </div>
+  <div id="vmiccard" class="card">
+    <div class="head"><h2>My mic</h2></div>
+    <button id="vmic" class="switch" aria-pressed="false">Others hear my mic</button>
+    <button id="vgate" class="switch" aria-pressed="false">Mute my mic while a sound plays</button>
+    <button id="vhear" class="switch" aria-pressed="false">Hear what they hear</button>
+  </div>
+  <div id="vcombos" class="card" hidden>
+    <div class="head"><h2>Voice combos</h2></div>
+    <div id="combos" class="chips wrap"></div>
+    <p class="hint">Puts one of your saved combos on every sound that plays.</p>
+  </div>
+</section>
+
+<section id="apps" class="view" hidden>
+  <p id="appnote" class="note" role="status"></p>
+  <ul id="applist" class="applist"></ul>
+  <p class="hint">"Others hear it" sends that program's sound (music, a video) to
+    whoever's listening, like the Send switch on the PC's Apps tab.</p>
 </section>
 
 <nav class="dock">
   <div class="row">
     <button id="stop" title="Stop every sound">Stop all</button>
+    <button id="pause" class="toggle" aria-pressed="false" aria-label="Pause" hidden
+      title="Pause every sound, or carry on"></button>
     <button id="ract" hidden>Play radio</button>
     <button id="reset" hidden title="Back to 1x, no pitch change, no effects">Reset all</button>
     <div class="vol">
@@ -1506,6 +1885,16 @@ BODY = """<!doctype html>
         <circle cx="5" cy="15" r="2.2"/>
         <circle cx="12" cy="8" r="2.2"/>
         <circle cx="19" cy="13" r="2.2"/></svg>Sound</button>
+    <button id="tab-voice" class="tab" role="tab" aria-selected="false" hidden>
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <rect x="9" y="3" width="6" height="11" rx="3"/>
+        <path d="M5.5 11a6.5 6.5 0 0 0 13 0M12 17.5V21M8.5 21h7"/></svg>Voice</button>
+    <button id="tab-apps" class="tab" role="tab" aria-selected="false" hidden>
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <rect x="3" y="4" width="18" height="16" rx="3"/>
+        <path d="M3 9h18"/>
+        <circle cx="6.5" cy="6.5" r=".6"/>
+        <path d="m10 13.5 4 2.5-4 2.5z"/></svg>Apps</button>
   </div>
 </nav>
 </div>
@@ -1519,10 +1908,13 @@ def _sha(text: str) -> str:
     return "'sha256-" + base64.b64encode(hashlib.sha256(text.encode()).digest()).decode() + "'"
 
 
-def page(signed: bool = False, board_version: str = "", api_version: int = 0) -> tuple[bytes, dict]:
+def page(signed: bool = False, board_version: str = "", api_version: int = 0,
+         actions=None) -> tuple[bytes, dict]:
     """(body, headers) for host.server(page=…). `signed`: the board takes X-Sig, so
-    the script signs requests instead of sending the key."""
-    build = json.dumps({"pocket": __version__, "board": board_version, "api": api_version})
+    the script signs requests instead of sending the key. `actions`: the ones the
+    server offers, so the page shows only buttons that work (None: all of them)."""
+    build = json.dumps({"pocket": __version__, "board": board_version, "api": api_version,
+                        "actions": None if actions is None else list(actions)})
     script = (SCRIPT.replace("{signed}", "true" if signed else "false")
               .replace("{build}", build.replace("<", "\\u003c")))
     html = (BODY.replace("{icon}", ICON).replace("{logo}", LOGO).replace("{intro}", INTRO)

@@ -1,5 +1,5 @@
 """What Onion Board looks like from Onion Pocket's side: the host a "remote" add-on
-is created with (Onion Board's soundboard/ui/remotehost.py). Onion Pocket uses
+is created with (Onion Board's soundboard/ui/settings/remotehost.py). Onion Pocket uses
 nothing else of the app, so this is the whole contract; tests/fakehost.py stands in
 for it in the tests.
 
