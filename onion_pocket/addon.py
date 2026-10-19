@@ -1,6 +1,6 @@
 """Onion Pocket: your pads on your phone, over the home Wi-Fi. An Onion Board
 add-on of kind "remote": it talks to the board only through the host it's created
-with (host.py describes it; Onion Board's soundboard/ui/remotehost.py is the real
+with (host.py describes it; Onion Board's soundboard/ui/settings/remotehost.py is the real
 one), and lives entirely in its card on Settings → Remote.
 
 Off unless *Let phones on this Wi-Fi use it* is ticked. Then a control API server
@@ -15,10 +15,12 @@ requests the phone never sends the key, only a one-time signature made with it
 (page.py). Plain HTTP: on a home network TLS
 would mean a certificate warning on every phone. Someone on the same Wi-Fi who can
 read that traffic could take the key and play or stop your sounds, so the card says
-to use it at home, not on public Wi-Fi. The phone gets ACTIONS only: never the mic,
-the voice changer or saving the replay. Besides the pads that's the live speed, pitch
-and effects, who's listening, and the radio (newer Onion Boards: the ones the board
-doesn't have are left out, and the page hides their tab).
+to use it at home, not on public Wi-Fi. The phone gets ACTIONS only. Besides the pads
+and the queue that's the live speed, pitch and effects, who's listening, the radio, the
+Voice tab (the voice changer, Say, the mic on / off and Hear what they hear), the Apps
+tab's Send switches, voice combos, hotkeys on / off and saving the instant replay as a
+sound (newer Onion Boards: the ones the board doesn't have are left out, and the page
+hides their buttons). Never anything that reads or sends files.
 """
 from __future__ import annotations
 
@@ -41,7 +43,11 @@ ACTIONS = ("status", "sounds", "categories", "play", "stop", "pause", "random", 
            # Onion Board 1.7.2 and newer
            "speed", "pitch", "effects", "reset", "mode",
            "stations", "radio", "radio_random", "radio_star", "radio_live", "radio_hear",
-           "radio_volume")
+           "radio_volume",
+           # Onion Board 1.9.24 and newer: the queue, the Voice tab, the mic, the replay
+           "queue", "voice", "voices", "say", "mic", "hear", "replay",
+           # Onion Board 2.5.0 and newer: the Apps tab, voice combos, hotkeys, the mic gate
+           "apps", "app", "setups", "setup", "hotkeys", "mic_gate")
 QR_PX = 200   # the pairing code's size on screen
 
 
@@ -98,9 +104,10 @@ class _Relay(QObject):
 class Pocket:
     def __init__(self, host):
         self.host = host
-        self.server = host.server(offered(host), page.page(
-            signed(host), getattr(host, "app_version", ""), getattr(host, "api_version", 0)),
-            "Onion Pocket")
+        actions = offered(host)
+        self.server = host.server(actions, page.page(
+            signed(host), getattr(host, "app_version", ""), getattr(host, "api_version", 0),
+            actions), "Onion Pocket")
         self._relay = _Relay()
         self.asking: threading.Thread | None = None   # waiting on Windows' admin prompt
         err = self.apply()

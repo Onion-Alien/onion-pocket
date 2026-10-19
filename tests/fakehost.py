@@ -11,10 +11,13 @@ from PySide6.QtWidgets import QFrame, QHBoxLayout, QLabel, QVBoxLayout
 from onion_pocket.host import API_VERSION
 
 ACTIONS = ("status", "sounds", "categories", "play", "stop", "pause", "random", "last",
-           "category", "volume", "live", "voice", "mic", "replay", "speed", "pitch",
-           "effects", "reset", "mode", "stations", "radio", "radio_random", "radio_star",
-           "radio_live", "radio_hear", "radio_volume", "help")
-OLD_ACTIONS = ACTIONS[:ACTIONS.index("replay") + 1] + ("help",)   # Onion Board 1.7.1
+           "queue", "category", "volume", "live", "voice", "voices", "say", "mic", "hear",
+           "replay", "speed", "pitch", "effects", "reset", "mode", "stations", "radio",
+           "radio_random", "radio_star", "radio_live", "radio_hear", "radio_volume", "apps",
+           "app", "setups", "setup", "hotkeys", "mic_gate", "chat", "chat_rules", "event",
+           "alerts", "feed", "help")   # Onion Board 2.5
+OLD_ACTIONS = ("status", "sounds", "categories", "play", "stop", "pause", "random", "last",
+               "category", "volume", "live", "voice", "mic", "replay", "help")   # 1.7.1
 
 
 class FakeServer:

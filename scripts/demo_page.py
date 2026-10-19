@@ -13,6 +13,8 @@ headless Edge or Chrome, with two pads playing:
     python scripts/demo_page.py --shot docs/screenshots/phone.png
     python scripts/demo_page.py --shot docs/screenshots/radio.png --view radio
     python scripts/demo_page.py --shot docs/screenshots/sound.png --view sound
+    python scripts/demo_page.py --shot docs/screenshots/voice.png --view voice
+    python scripts/demo_page.py --shot docs/screenshots/apps.png --view apps
 """
 from __future__ import annotations
 
@@ -70,6 +72,10 @@ MODES = [("off", "Off (send as is)", "No shaping. Your sounds go out exactly as 
          ("discord", "Discord", "Shaped for Discord's voice chat."),
          ("game", "Vivox", "Shaped for Vivox game voice chat."),
          ("steam", "Steam voice", "Shaped for Steam voice chat.")]
+VOICES = [("robot", "Robot"), ("chipmunk", "Chipmunk"), ("demon", "Demon"),
+          ("radio", "Old radio"), ("alien", "Alien"), ("giant", "Giant")]
+APPS = [("Spotify", "Spotify.exe", True, True, 70), ("YouTube in Edge", "msedge.exe", True,
+         False, 100), ("VLC media player", "vlc.exe", False, False, 100)]
 COLORS = ["#ff5c8a", "#1fb5ff", "#ffb020", "#00c2b2", "#13ce66", "#7c5cff"]
 
 
@@ -85,7 +91,12 @@ def board(many: bool) -> dict:
             "live": True, "volume": 80, "playing": {},
             "speed": 1.25, "pitch": 2, "keep": True, "fx": {"bass": 12}, "mode": "discord",
             "stations": stations, "recent": ["r0", "r3"], "radio_on": "r0",
-            "radio_live": True, "radio_hear": True, "radio_vol": 60}
+            "radio_live": True, "radio_hear": True, "radio_vol": 60,
+            "queue": ["s7", "s2"], "voice": True, "voice_name": "robot", "mic": True,
+            "hear": False, "mic_gate": True, "hotkeys": True, "paused": False,
+            "apps": [{"name": n, "exe": e, "running": r, "sending": s, "volume": v}
+                     for n, e, r, s, v in APPS],
+            "setups": ["Stream mix", "Spooky"], "setup": ""}
 
 
 def live(st) -> dict:
@@ -101,6 +112,15 @@ def radio(st) -> dict:
             "station": dict(on, playing=True) if on else None,
             "title": "Night Drive (lofi mix)" if on else "", "live": st["radio_live"],
             "hear": st["radio_hear"], "volume": st["radio_vol"], "last": True}
+
+
+def voice(st) -> dict:
+    return {"voice": st["voice"], "voice_name": st["voice_name"]}
+
+
+def queue(st) -> dict:
+    names = {s["id"]: s["name"] for s in st["sounds"]}
+    return {"queue": [{"id": i, "name": names[i]} for i in st["queue"] if i in names]}
 
 
 def modes(st) -> dict:
@@ -158,7 +178,9 @@ class Handler(BaseHTTPRequestHandler):
             return self._json(404, {"error": "no such action"})
         status = {"live": st["live"], "volume": st["volume"], "playing": list(st["playing"])}
         if not st.get("old"):
-            status.update(live(st), mode=st["mode"], radio=radio(st))
+            status.update(live(st), mode=st["mode"], radio=radio(st), **voice(st),
+                          mic=st["mic"], hear=st["hear"], mic_gate=st["mic_gate"],
+                          hotkeys=st["hotkeys"], paused=st["paused"], **queue(st))
         return self._json(200, status)
 
     @staticmethod
@@ -226,6 +248,54 @@ class Handler(BaseHTTPRequestHandler):
         if action == "radio_volume":
             st["radio_vol"] = step(st["radio_vol"], 0, 100, 10)
             return radio(st)
+        return Handler._newer(st, action, q, flip)
+
+    @staticmethod
+    def _newer(st, action, q, flip):
+        """The queue, the Voice and Apps tabs, combos, hotkeys (Onion Board 2.5)."""
+        if action == "queue":
+            if q.get("clear"):
+                st["queue"] = []
+            elif "category" in q:
+                st["queue"] += [s["id"] for s in st["sounds"] if q["category"] in s["categories"]]
+            elif "id" in q:
+                st["queue"].append(q["id"])
+            return queue(st)
+        if action == "voices":
+            return {**voice(st), "voices": [{"name": k, "shown": n, "saved": False}
+                                            for k, n in VOICES]}
+        if action == "voice":
+            if "name" in q:
+                st.update(voice=True, voice_name=q["name"])
+            elif "random" in q:
+                st.update(voice=True, voice_name=VOICES[int(time.monotonic()) % 6][0])
+            else:
+                st["voice"] = flip(st["voice"])
+            return voice(st)
+        if action == "say":
+            return {"stopped": True} if q.get("stop") else {"saying": q.get("text", "")}
+        if action in ("mic", "hear", "mic_gate", "hotkeys"):
+            st[action] = flip(st[action])
+            return {action: st[action]}
+        if action == "pause":
+            st["paused"] = not st["paused"]
+            return {"paused": st["paused"]}
+        if action == "replay":
+            return {"saved": True}
+        if action == "apps":
+            return st["apps"]
+        if action == "app":
+            a = next(a for a in st["apps"] if a["exe"] == q.get("name"))
+            if "send" in q:
+                a["sending"] = not a["sending"]
+            if "volume" in q:
+                a["volume"] = round(float(q["volume"]))
+            return a
+        if action == "setups":
+            return {"setups": st["setups"], "on": {"sounds": st["setup"]}}
+        if action == "setup":
+            st["setup"] = q.get("name", "")
+            return {"setups": st["setups"], "on": {"sounds": st["setup"]}}
         return None
 
     def _json(self, code, data):
@@ -244,7 +314,7 @@ def browser() -> str:
     sys.exit("--shot needs Edge or Chrome")
 
 
-def shot(url: str, out: Path, width=390, height=780, scale=2, view="pads"):
+def shot(url: str, out: Path, width=390, height=780, scale=2, view="pads", tap=""):
     """A phone-sized picture of url, through the browser's DevTools protocol (a
     headless window can't be made narrower than ~500 px; the emulated phone can)."""
     from PySide6.QtCore import QCoreApplication, QEventLoop, QTimer, QUrl
@@ -298,10 +368,13 @@ def shot(url: str, out: Path, width=390, height=780, scale=2, view="pads"):
             {"name": "prefers-color-scheme", "value": "dark"},
             {"name": "prefers-reduced-motion", "value": "reduce"}])   # bars stand still
         call("Page.navigate", url=url)
-        wait(2500)
+        wait(4000)                                     # the intro takes 3 s
         if view != "pads":
             call("Runtime.evaluate", expression=f"document.getElementById('tab-{view}').click()")
             wait(1500)
+        if tap:                                        # e.g. qmode: a button pressed first
+            call("Runtime.evaluate", expression=f"document.getElementById('{tap}').click()")
+            wait(800)
         errors = call("Runtime.evaluate", expression="window.__errors || []",
                       returnByValue=True)["result"].get("value")
         if errors:
@@ -323,8 +396,12 @@ def main():
     ap.add_argument("--many", action="store_true", help="30 sounds instead of 12")
     ap.add_argument("--old", action="store_true",
                     help="an older Onion Board: the pads only, no Radio or Sound tab")
-    ap.add_argument("--view", choices=("pads", "radio", "sound"), default="pads",
+    ap.add_argument("--view", choices=("pads", "radio", "sound", "voice", "apps"), default="pads",
                     help="the tab --shot shows")
+    ap.add_argument("--tap", default="", metavar="ID",
+                    help="click this button before the --shot (e.g. qmode)")
+    ap.add_argument("--size", default="390x780", metavar="WxH",
+                    help="the phone --shot shows, e.g. 780x360 for a sideways one")
     ap.add_argument("--playing", default="", metavar="IDS",
                     help="sounds that keep playing, e.g. s1,s4")
     ap.add_argument("--shot", type=Path, metavar="PNG",
@@ -338,7 +415,8 @@ def main():
     url = f"http://127.0.0.1:{args.port}/#k={KEY}"
     if args.shot:
         threading.Thread(target=srv.serve_forever, daemon=True).start()
-        shot(url, args.shot, view=args.view)
+        w, h = (int(n) for n in args.size.split("x"))
+        shot(url, args.shot, width=w, height=h, view=args.view, tap=args.tap)
         srv.shutdown()
         return
     print(f"Onion Pocket demo: {url}   (Ctrl+C to stop)")
