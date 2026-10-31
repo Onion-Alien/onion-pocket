@@ -1,4 +1,4 @@
-<p align="right"><img src="https://hits.sh/github.com/Onion-Alien/onion-pocket.svg?view=total&label=total%20visits&color=6b8e23" alt="total visits"></p>
+<p align="right"><img src="https://hits.sh/github.com/Onion-Alien/onion-pocket.svg?view=total&label=total%20visits&color=6b8e23" alt="total visits"> <img src="https://img.shields.io/github/downloads/Onion-Alien/onion-pocket/total?label=downloads&color=6b8e23" alt="downloads"></p>
 
 <p align="center">
   <img src="docs/logo.svg" width="96" alt="">
