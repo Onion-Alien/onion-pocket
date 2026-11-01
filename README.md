@@ -80,6 +80,17 @@ so the PC still does the playing ([docs/PHONE.md](docs/PHONE.md) has the researc
   Click *Let it through Windows Firewall*. And in Windows Settings → Network &
   internet → Wi-Fi, set your network to *Private*.
 
+## Privacy
+
+Onion Pocket sends nothing about you anywhere: no telemetry, no accounts, nothing to
+the internet. The phone page comes from your PC and talks only to it, over your home
+network. The phone sees your sound names, categories, radio stations and settings, so
+it can show them, and keeps its key; nothing else leaves the PC. When the phone runs
+the radio, Onion Board fetches the stations from its usual station directory, as it
+does when you click the same buttons on the PC. The one change it makes to your PC
+is the Windows Firewall rule above, and only after asking. [SECURITY.md](SECURITY.md)
+lists everything.
+
 ## Install
 
 In Onion Board (newer than 1.6.8): **Settings → Remote → *Get Onion Pocket***. It
@@ -92,7 +103,15 @@ To try a build of your own instead: `python scripts/build_module.py` →
 `ONIONBOARD_ONION_POCKET_ZIP` set to that zip and click *Get Onion Pocket*, or unzip it
 into `%APPDATA%\OnionBoard\modules\` and restart Onion Board.
 
-To remove it, delete `%APPDATA%\OnionBoard\modules\onion-pocket`.
+To remove it, delete `%APPDATA%\OnionBoard\modules\onion-pocket` and restart Onion
+Board. If you let it through Windows Firewall, also delete its rule, which removing the
+folder leaves behind: Windows Security → Firewall & network protection → Advanced
+settings → Inbound Rules → both `OnionPocket` rules → Delete. Or, in a terminal run as
+administrator:
+
+```
+netsh advfirewall firewall delete rule name=OnionPocket
+```
 
 ## Releasing
 
@@ -141,3 +160,8 @@ and share your version. Anyone who shares a version, free or paid, has to publis
 source under the same license, so nobody can make a closed copy. The name "Onion Pocket"
 and its logo aren't covered by the license, so your own version needs its own name and logo.
 Releases up to 0.3.0 keep the license they came with.
+
+Everything in the add-on is this project's own: the QR codes are drawn in code from the
+QR spec, and the logo, Bun and the phone page are made for it. The page loads no fonts,
+pictures or code from anywhere. It runs on the Python and PySide6 (Qt for Python, LGPL
+v3) that Onion Board ships and credits.

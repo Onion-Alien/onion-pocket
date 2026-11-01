@@ -31,6 +31,19 @@ jobs:
           test "v$ver" = "$GITHUB_REF_NAME" || { echo "tag $GITHUB_REF_NAME, version $ver"; exit 1; }
       - name: Build the add-on
         run: python scripts/build_module.py
+      # Code signing goes here, once the project is accepted by SignPath Foundation
+      # (free signing for open-source projects): it signs only files built by this
+      # workflow from the public repo, and each release waits for a manual approval on
+      # signpath.io. Today the zip holds only Python source, LICENSE and module.json, no
+      # Windows program, so there is nothing to sign yet. Anything signed must replace
+      # its file in dist/ before the publish step: Onion Board checks the zip against
+      # the SHA-256 GitHub lists for the uploaded file. Needs SIGNPATH_API_TOKEN and the
+      # organization/project IDs SignPath gives out; none exist yet.
+      - name: Code signing (SignPath, not set up yet)
+        if: ${{ false }}
+        shell: bash
+        run: |
+          echo "SignPath signing isn't set up yet"; exit 1
       - name: Publish the release
         shell: bash
         env:
