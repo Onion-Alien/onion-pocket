@@ -136,4 +136,8 @@ standard library and PySide6 (`scripts/build_module.py` checks).
 
 ## License
 
-Same as Onion Board: [LICENSE](LICENSE).
+Open source under the [GNU GPL v3 or later](LICENSE), like Onion Board: use it, change it
+and share your version. Anyone who shares a version, free or paid, has to publish its full
+source under the same license, so nobody can make a closed copy. The name "Onion Pocket"
+and its logo aren't covered by the license, so your own version needs its own name and logo.
+Releases up to 0.3.0 keep the license they came with.
