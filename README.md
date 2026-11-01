@@ -104,10 +104,11 @@ To try a build of your own instead: `python scripts/build_module.py` →
 into `%APPDATA%\OnionBoard\modules\` and restart Onion Board.
 
 To remove it, delete `%APPDATA%\OnionBoard\modules\onion-pocket` and restart Onion
-Board. If you let it through Windows Firewall, also delete its rule, which removing the
-folder leaves behind: Windows Security → Firewall & network protection → Advanced
-settings → Inbound Rules → both `OnionPocket` rules → Delete. Or, in a terminal run as
-administrator:
+Board. Uninstalling Onion Board also removes the add-on's Windows Firewall rule. If
+you remove only the add-on and you let it through Windows Firewall, delete its rule
+yourself, since removing the folder leaves it behind: Windows Security → Firewall &
+network protection → Advanced settings → Inbound Rules → both `OnionPocket` rules →
+Delete. Or, in a terminal run as administrator:
 
 ```
 netsh advfirewall firewall delete rule name=OnionPocket
