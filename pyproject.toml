@@ -4,7 +4,7 @@ dynamic = ["version"]
 description = "Your pads on your phone: an Onion Board add-on"
 readme = "README.md"
 requires-python = ">=3.12"
-license = "LicenseRef-MIT-Commons-Clause"
+license = "GPL-3.0-or-later"
 license-files = ["LICENSE"]
 
 [tool.setuptools.dynamic]
