@@ -64,10 +64,13 @@ KNOBS = [{"key": "bass", "label": "Bass", "lo": -12, "hi": 18, "unit": "dB"},
          {"key": "reverb", "label": "Reverb", "lo": 0, "hi": 1, "unit": ""},
          {"key": "echo", "label": "Echo", "lo": 0, "hi": 1, "unit": ""},
          {"key": "crunch", "label": "Distortion", "lo": 0, "hi": 1, "unit": ""}]
-PRESETS = {"Bass boosted": {"bass": 12}, "Blown out": {"bass": 15, "crunch": 0.7},
-           "Concert hall": {"reverb": 0.55}, "Canyon": {"echo": 0.6, "reverb": 0.2},
-           "Underwater": {"muffle": 0.8, "reverb": 0.3, "bass": 4},
-           "Phone call": {"bass": -12, "treble": -4, "muffle": 0.45, "crunch": 0.15}}
+PRESETS = {"Nightcore": {"bass": 3}, "Slowed + reverb": {"reverb": 0.45, "bass": 3},
+           "Bass boosted": {"bass": 12}, "Chipmunk": {"treble": 3}, "Deep voice": {"bass": 4},
+           "Underwater": {"muffle": 0.8, "reverb": 0.3, "bass": 4}}
+SIMPLES = {"game": ("Game", "Voice chat inside a game.", "game"),
+           "voice": ("Voice chat", "Discord, calls in a browser, Zoom, Teams.", "discord"),
+           "clean": ("Clean", "Streaming, recording, Voicemeeter or a mixer.", "off"),
+           "advanced": ("Advanced", "Pick the exact voice chat yourself.", "steam")}
 MODES = [("off", "Off (send as is)", "No shaping. Your sounds go out exactly as mixed."),
          ("discord", "Discord", "Shaped for Discord's voice chat."),
          ("game", "Vivox", "Shaped for Vivox game voice chat."),
@@ -80,23 +83,29 @@ COLORS = ["#ff5c8a", "#1fb5ff", "#ffb020", "#00c2b2", "#13ce66", "#7c5cff"]
 
 
 def board(many: bool) -> dict:
-    sounds = [{"id": f"s{i}", "name": n, "color": c, "categories": cats, "hotkey": ""}
+    sounds = [{"id": f"s{i}", "name": n, "color": c, "categories": cats,
+               "hotkey": {0: "f5", 2: "ctrl+alt+7"}.get(i, ""), "plays": i * 7 % 12,
+               "duration": 1.2 + i * 0.7 + (74 if i == 4 else 0), "effects": i == 3,
+               "loop": i == 7}
               for i, (n, c, cats) in enumerate(SOUNDS)]
     if many:
-        sounds += [{"id": f"x{i}", "name": n, "color": COLORS[i % len(COLORS)],
-                    "categories": [], "hotkey": ""} for i, n in enumerate(EXTRA)]
+        sounds += [{"id": f"x{i}", "name": n, "color": COLORS[i % len(COLORS)], "categories": [],
+                    "hotkey": "", "plays": 0, "duration": 2.5, "effects": False, "loop": False}
+                   for i, n in enumerate(EXTRA)]
     stations = [{"id": f"r{i}", "name": n, "country": c, "tags": t, "bitrate": 128,
                  "fav": i in (1, 2)} for i, (n, c, t) in enumerate(STATIONS)]
     return {"sounds": sounds, "categories": ["Memes", "Fails", "Games"],
             "live": True, "volume": 80, "playing": {},
             "speed": 1.25, "pitch": 2, "keep": True, "fx": {"bass": 12}, "mode": "discord",
+            "simple": "voice",
+            "setup_ok": True, "voices_on": ["fx"],
             "stations": stations, "recent": ["r0", "r3"], "radio_on": "r0",
             "radio_live": True, "radio_hear": True, "radio_vol": 60,
             "queue": ["s7", "s2"], "voice": True, "voice_name": "robot", "mic": True,
             "hear": False, "mic_gate": True, "hotkeys": True, "paused": False,
             "apps": [{"name": n, "exe": e, "running": r, "sending": s, "volume": v}
                      for n, e, r, s, v in APPS],
-            "setups": ["Stream mix", "Spooky"], "setup": ""}
+            "setups": ["Stream mix", "Spooky"], "setup": {}}
 
 
 def live(st) -> dict:
@@ -125,7 +134,10 @@ def queue(st) -> dict:
 
 def modes(st) -> dict:
     label = next(lab for k, lab, _n in MODES if k == st["mode"])
-    return {"mode": st["mode"], "mode_label": label,
+    return {"mode": st["mode"], "mode_label": label, "simple": st["simple"],
+            "explain": SIMPLES[st["simple"]][1],
+            "simples": [{"key": k, "label": v[0], "summary": v[1], "details": v[1]}
+                        for k, v in SIMPLES.items()],
             "modes": [{"key": k, "label": lab, "note": n} for k, lab, n in MODES]}
 
 
@@ -169,16 +181,22 @@ class Handler(BaseHTTPRequestHandler):
             if answer is not None:
                 return self._json(200, answer)
         if action == "stop":
-            st["playing"].clear()
+            if "id" in q:
+                st["playing"].pop(q["id"], None)
+            else:
+                st["playing"].clear()
         elif action == "live":
             st["live"] = not st["live"]
         elif action == "volume":
-            st["volume"] = max(0, min(100, st["volume"] + (10 if q.get("step") == "up" else -10)))
+            st["volume"] = (round(float(q["set"])) if "set" in q else
+                            max(0, min(100, st["volume"] + (10 if q.get("step") == "up" else -10))))
         elif action != "status":
             return self._json(404, {"error": "no such action"})
         status = {"live": st["live"], "volume": st["volume"], "playing": list(st["playing"])}
         if not st.get("old"):
-            status.update(live(st), mode=st["mode"], radio=radio(st), **voice(st),
+            status.update(live(st), mode=st["mode"], simple=st["simple"],
+                          explain=SIMPLES[st["simple"]][1], setup_ok=st["setup_ok"],
+                          voices_on=st["voices_on"], radio=radio(st), **voice(st),
                           mic=st["mic"], hear=st["hear"], mic_gate=st["mic_gate"],
                           hotkeys=st["hotkeys"], paused=st["paused"], **queue(st))
         return self._json(200, status)
@@ -217,6 +235,8 @@ class Handler(BaseHTTPRequestHandler):
             return live(st)
         if action == "mode":
             st["mode"] = q.get("set", st["mode"])
+            if "simple" in q:
+                st["simple"], st["mode"] = q["simple"], SIMPLES[q["simple"]][2]
             return modes(st)
         if action == "stations":
             which, words = q.get("list", "popular"), q.get("q", "").lower()
@@ -246,7 +266,8 @@ class Handler(BaseHTTPRequestHandler):
             st[action] = flip(st[action])
             return radio(st)
         if action == "radio_volume":
-            st["radio_vol"] = step(st["radio_vol"], 0, 100, 10)
+            st["radio_vol"] = (round(float(q["set"])) if "set" in q else
+                               step(st["radio_vol"], 0, 100, 10))
             return radio(st)
         return Handler._newer(st, action, q, flip)
 
@@ -292,10 +313,10 @@ class Handler(BaseHTTPRequestHandler):
                 a["volume"] = round(float(q["volume"]))
             return a
         if action == "setups":
-            return {"setups": st["setups"], "on": {"sounds": st["setup"]}}
+            return {"setups": st["setups"], "on": st["setup"]}
         if action == "setup":
-            st["setup"] = q.get("name", "")
-            return {"setups": st["setups"], "on": {"sounds": st["setup"]}}
+            st["setup"][q.get("tab", "sounds")] = q.get("name", "")
+            return {"setups": st["setups"], "on": st["setup"]}
         return None
 
     def _json(self, code, data):

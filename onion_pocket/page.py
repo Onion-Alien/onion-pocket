@@ -3,9 +3,9 @@ script inline, served by the app at / on the home network. No CDN, no fonts, no
 picture files: the logo is inline SVG (the same mark as Onion Board's icon) and
 the pads are CSS in each pad's own colour.
 
-Three tabs along the bottom: Pads, Radio (the Radio tab's stations and controls) and
-Sound (the live speed, pitch and effects, and who's listening). A tab shows only when
-the board's status says it has that part, so an older Onion Board gets the pads alone.
+Tabs along the bottom: Pads, Radio (the Radio tab's stations and controls), Sound (the
+live speed, pitch and effects, and who's listening), Voice and Apps. A tab shows only
+when the board's status says it has that part, so an older Onion Board gets the pads alone.
 
 The key arrives in the link's #fragment (browsers never send that part), is kept in
 the phone's localStorage and taken out of the address bar. With an Onion Board that
@@ -86,7 +86,7 @@ header { position:sticky; top:0; z-index:3; padding:14px 16px 6px;
 .brand { display:flex; align-items:center; gap:12px; }
 .brand svg { width:42px; height:42px; flex:none;
   filter:drop-shadow(0 4px 10px #7c5cff55); }
-.titles { flex:1; min-width:0; }
+.titles { flex:1; min-width:0; overflow:hidden; }
 h1 { font-size:19px; margin:0; letter-spacing:.2px; white-space:nowrap; }
 h1 em { font-style:normal; font-weight:600; background:linear-gradient(90deg,
   var(--accent), var(--pink)); -webkit-background-clip:text; background-clip:text;
@@ -163,9 +163,10 @@ main { display:grid; grid-template-columns:repeat(auto-fill, minmax(102px, 1fr))
   padding:10px 16px calc(10px + var(--safe-b)); display:flex; gap:10px;
   background:#16131ff2; -webkit-backdrop-filter:blur(16px); backdrop-filter:blur(16px);
   border-top:1px solid var(--line); }
-#stop { flex:1; display:flex; align-items:center; justify-content:center; gap:9px;
+#stop { flex:1; min-width:0; white-space:nowrap; display:flex; align-items:center;
+  justify-content:center; gap:9px;
   font-weight:700; min-height:50px; border-radius:14px;
-  background:linear-gradient(135deg, #ff4d6d, #ff4d8d); box-shadow:0 6px 18px #ff4d6d44; }
+  background:linear-gradient(135deg, #d92d50, #d42e68); box-shadow:0 6px 18px #ff4d6d44; }
 #stop::before { content:""; width:12px; height:12px; border-radius:3px; background:#fff; }
 .vol { display:flex; align-items:center; gap:4px; padding:4px; border-radius:14px;
   background:var(--panel); box-shadow:inset 0 0 0 1px var(--line); }
@@ -186,7 +187,7 @@ body.tabbed main, .view { padding-bottom:calc(172px + var(--safe-b)); }
   letter-spacing:.6px; }
 #ract, #reset { flex:1; font-weight:700; min-height:50px; border-radius:14px;
   background:linear-gradient(135deg, var(--accent), #9b6bff); box-shadow:0 6px 18px #7c5cff44; }
-#ract.on { background:linear-gradient(135deg, #ff4d6d, #ff4d8d); box-shadow:0 6px 18px #ff4d6d44; }
+#ract.on { background:linear-gradient(135deg, #d92d50, #d42e68); box-shadow:0 6px 18px #ff4d6d44; }
 #reset { background:var(--panel2); box-shadow:inset 0 0 0 1px var(--line); }
 .tabs { display:flex; gap:6px; margin:0 -6px; }
 .tab { flex:1; display:flex; flex-direction:column; align-items:center; gap:3px;
@@ -274,8 +275,8 @@ select { width:100%; font:inherit; color:var(--text); background:var(--panel2);
 .note { color:var(--dim); font-size:13px; margin:0 2px 8px; }
 .note:empty { display:none; }
 
-.acts { padding-top:2px; }
-body.queueing .pad { outline:2px dashed #ffffffa0; outline-offset:-7px; }
+.acts { padding-top:2px; flex-wrap:wrap; overflow:visible; }
+body.queueing .pad { outline:2px dashed #ffffffa0; outline-offset:-4px; }
 .upnext { display:flex; align-items:center; gap:8px; padding:2px 0 6px; font-size:13.5px; }
 .upnext .kicker { flex:none; color:var(--ok); }
 #qlist { flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
@@ -510,6 +511,54 @@ STYLE += """
 }
 """
 
+STYLE += """
+.padwrap { position:relative; display:grid; min-width:0; }
+.pad .marks { position:absolute; top:11px; left:11px; display:flex; gap:4px; }
+.pad.playing .marks { display:none; }
+.badge { font-size:11px; font-weight:700; line-height:1; padding:3px 5px; border-radius:6px;
+  background:#00000059; color:#fff; }
+.pad .foot { display:flex; align-items:center; gap:6px; width:100%; min-height:17px;
+  margin-top:5px; font-size:11.5px; font-weight:600; }
+.pad .foot:empty { display:none; }
+.pad .foot .hk { min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.pad .foot .len { flex:none; margin-left:auto; font-variant-numeric:tabular-nums;
+  text-shadow:0 1px 3px #00000066; }
+.pstop { display:none; position:absolute; top:5px; left:5px; width:38px; height:38px;
+  min-height:0; padding:0; border-radius:12px; background:#000000a8; align-items:center;
+  justify-content:center; }
+.pstop::before { content:""; width:12px; height:12px; border-radius:3px; background:#fff; }
+.pad.playing + .pstop { display:flex; }
+#areplay::before { content:""; display:inline-block; width:10px; height:10px; margin-right:6px;
+  border-radius:50%; background:var(--bad); }
+.banner { margin:4px 16px 8px; padding:10px 12px; border-radius:12px; color:#ffe2a8;
+  background:#ffb0201a; box-shadow:inset 0 0 0 1px #ffb02040; }
+#live.warn { background:#ffb02024; color:var(--warn); box-shadow:inset 0 0 0 1.5px #ffb02066; }
+.vol #volbtn { width:52px; min-height:42px; padding:0; font-size:inherit; line-height:1.35;
+  background:transparent; border-radius:10px; }
+#volrow { display:flex; align-items:center; gap:10px; }
+#volout { flex:none; width:52px; text-align:right; font-weight:700; font-size:14px;
+  font-variant-numeric:tabular-nums; }
+body.volopen main, body.volopen .view { padding-bottom:calc(222px + var(--safe-b)); }
+.vlen { margin:6px 0 0; background:var(--panel2); }
+#modeseg { background:var(--panel2); }
+#mode { margin-top:2px; }
+#vsay .row button { min-width:0; }
+@media (max-height: 500px) {
+  .dock { flex-wrap:wrap; }
+  #volrow { flex:0 0 100%; order:-1; }
+  body.volopen main, body.volopen .view { padding-bottom:calc(120px + var(--safe-b)); }
+}
+/* The smallest phones: the volume box gives up room, so Stop all keeps its one line. */
+@media (max-width: 359px) {
+  .dock .row { gap:6px; }
+  .vol { flex:none; }
+  .vol button { width:34px; }
+  .vol #volbtn { width:46px; }
+  #stop { padding:9px 6px; gap:6px; }
+  #pause { width:46px; }
+}
+"""
+
 INTRO = """
 <div id="dive" aria-label="Onion Pocket opening animation">
   <div class="dive-logo">{intro-logo}<span>Onion <em>Pocket</em></span></div>
@@ -654,6 +703,8 @@ let view = "pads", st = {}, knobs = null, modes = null;
 let rlist = "", rquery = "", rpoll = 0, rtries = 0, rtimer = 0;
 let queueMode = false, voices = null, voiceOff = false, setups = null;
 let apps = null, appsOff = false;   // the Apps tab's programs; off: switched off on the PC
+let simples = null, voiceSecs = 0, mostPlayed = false;
+try { mostPlayed = localStorage.getItem("ob-sort") === "plays"; } catch (e) {}
 const held = {};       // control id -> until when the status mustn't move it (a thumb on it)
 const QUICK = [0.5, 0.75, 1, 1.25, 1.5, 2];
 const SIGNED = {signed};   // the board checks signatures: the key never goes over the Wi-Fi
@@ -893,6 +944,28 @@ function drawChips() {
   }
 }
 
+function prettyKey(k) {          // a MIDI pad's name means nothing on the phone
+  if (!k || /^midi/i.test(k)) { return ""; }
+  return k.split("+").map((p) => {
+    p = p.trim();
+    return p.length > 1 ? p[0].toUpperCase() + p.slice(1) : p.toUpperCase();
+  }).join("+");
+}
+
+function fmtLen(v) {
+  const s = num(v, 0);
+  if (s <= 0) { return ""; }
+  if (s < 60) { return s.toFixed(1) + "s"; }
+  return Math.floor(s / 60) + ":" + String(Math.floor(s % 60)).padStart(2, "0");
+}
+
+function piece(tag, cls, text) {
+  const e = document.createElement(tag);
+  e.className = cls;
+  e.textContent = text;
+  return e;
+}
+
 function emptyCard(big, title, text) {
   const p = document.createElement("div");
   p.className = "empty";
@@ -924,6 +997,7 @@ function drawPads() {
       : emptyCard("\\u{1F3B5}", "No sounds yet", "Add some in Onion Board on the PC."));
     return;
   }
+  if (mostPlayed) { shown.sort((a, b) => num(b.plays, 0) - num(a.plays, 0)); }
   for (const s of shown) {
     const b = document.createElement("button");
     b.className = "pad" + (playing.has(s.id) ? " playing" : "");
@@ -938,9 +1012,21 @@ function drawPads() {
     const n = document.createElement("span");
     n.className = "nm";
     n.textContent = s.name;
-    b.append(eq, n);
+    const marks = piece("span", "marks", "");
+    if (s.effects) { marks.appendChild(piece("span", "badge", "FX")); }
+    if (s.loop) { marks.appendChild(piece("span", "badge", "Loop")); }
+    const foot = piece("span", "foot", "");
+    const key = prettyKey(s.hotkey), len = fmtLen(s.duration);
+    if (key) { foot.appendChild(piece("span", "badge hk", key)); }
+    if (len) { foot.appendChild(piece("span", "len", len)); }
+    b.append(marks, eq, n, foot);
     b.addEventListener("click", () => play(s.id, b));
-    grid.appendChild(b);
+    const stop = piece("button", "pstop", "");
+    stop.setAttribute("aria-label", "Stop " + s.name);
+    stop.addEventListener("click", () => api("stop?id=" + q(s.id)).then(status, () => {}));
+    const wrap = piece("div", "padwrap", "");
+    wrap.append(b, stop);
+    grid.appendChild(wrap);
   }
 }
 
@@ -975,6 +1061,9 @@ function drawActs() {
   $("arandom").hidden = !can("random");
   $("alast").hidden = !can("last");
   $("areplay").hidden = !can("replay");
+  $("asort").hidden = !sounds.some((s) => s.plays !== undefined);
+  press($("asort"), mostPlayed);
+  $("asort").textContent = mostPlayed ? "Most played" : "My order";
   if (!queue && queueMode) { queueMode = false; }
   press($("qmode"), queueMode);
   $("qmode").textContent = queueMode ? "Tap: queue it" : "Tap: play now";
@@ -991,6 +1080,11 @@ function drawQueue() {
 
 function buildPads() {
   $("qmode").addEventListener("click", () => { queueMode = !queueMode; drawActs(); });
+  $("asort").addEventListener("click", () => {
+    mostPlayed = !mostPlayed;
+    try { localStorage.setItem("ob-sort", mostPlayed ? "plays" : ""); } catch (e) {}
+    drawActs(); drawPads();
+  });
   for (const [id, shuffle] of [["qall", false], ["qshuf", true]]) {
     $(id).addEventListener("click", () => {
       if (!cat) { return; }
@@ -1012,9 +1106,9 @@ function buildPads() {
   });
 }
 
-function flash(b, text) {        // a button says what it did for a moment
+function flash(b, text, mark = "\\u2713 ") {   // a button says what it did for a moment
   if (!b.dataset.label) { b.dataset.label = b.textContent; }
-  b.textContent = "\\u2713 " + text;
+  b.textContent = mark + text;
   clearTimeout(b._flash);
   b._flash = setTimeout(() => { b.textContent = b.dataset.label; }, 1800);
 }
@@ -1050,10 +1144,10 @@ function show(v) {
   $("reset").hidden = v !== "sound";
   $("vlabel").textContent = v === "radio" ? "Radio" : "Sounds";
   drawVolume();
-  if (v === "radio") { loadStations(); }
+  if (v === "radio") { loadStations(); loadSetups(); }
   if (v === "sound") { loadSound(); }
   if (v === "voice") { loadVoice(); }
-  if (v === "apps") { loadApps(); }
+  if (v === "apps") { loadApps(); loadSetups(); }
   window.scrollTo(0, 0);
 }
 
@@ -1062,9 +1156,30 @@ function drawVolume() {
   // newer boards go up to 1000% (100: normal)
   const v = Math.max(0, Math.min(1000, Math.round(num(view === "radio" ? r.volume
                                                                        : st.volume, 0))));
-  $("vol").textContent = v + "%";
-  $("vol").classList.toggle("hot", v > 100);
-  $("volbar").style.width = Math.min(100, v) + "%";
+  if (free("volslider")) {
+    $("vol").textContent = $("volout").textContent = v + "%";
+    $("volslider").value = Math.min(200, v);
+    $("vol").classList.toggle("hot", v > 100);
+    $("volbar").style.width = Math.min(100, v) + "%";
+  }
+}
+
+function buildVolume() {
+  $("volbtn").addEventListener("click", () => {
+    const open = $("volrow").hidden;
+    $("volrow").hidden = !open;
+    $("volbtn").setAttribute("aria-expanded", open ? "true" : "false");
+    document.body.classList.toggle("volopen", open);
+  });
+  slider($("volslider"),
+         (v) => send((view === "radio" ? "radio_volume" : "volume") + "?set=" + v)
+           .then(status, () => {}),
+         (v) => {
+           v = Math.round(v);
+           $("vol").textContent = $("volout").textContent = v + "%";
+           $("vol").classList.toggle("hot", v > 100);
+           $("volbar").style.width = Math.min(100, v) + "%";
+         });
 }
 
 // ------------------------------------------------------------------ sound: speed, pitch, effects
@@ -1186,6 +1301,20 @@ function drawLive(s) {
 function drawModes(m) {
   if (!m || !m.modes) { return; }
   modes = m.modes;
+  simples = m.simples || null;
+  const seg = $("modeseg");
+  seg.replaceChildren();
+  for (const s of simples || []) {
+    const b = piece("button", "", s.label);
+    b.dataset.key = s.key;
+    b.addEventListener("click", () => {
+      hold("modeseg", 3000);
+      seg.dataset.pick = s.key;
+      for (const o of seg.children) { o.classList.toggle("sel", o === b); }
+      send("mode?simple=" + q(s.key)).then((a) => { held.modeseg = 0; drawModes(a); }, () => {});
+    });
+    seg.appendChild(b);
+  }
   const sel = $("mode");
   sel.replaceChildren();
   for (const d of modes) {
@@ -1194,13 +1323,24 @@ function drawModes(m) {
     o.textContent = d.key === "off" ? "Off" : d.label;
     sel.appendChild(o);
   }
-  drawMode(m.mode);
+  drawMode(m);
 }
 
-function drawMode(key) {
+function drawMode(s) {
+  const key = s ? s.mode : undefined;
   if (!modes || key === undefined) { return; }
   if (!modes.some((d) => d.key === key)) { modes = null; loadSound(); return; }   // a new one
   if (free("mode")) { $("mode").value = key; }
+  const seg = $("modeseg");
+  seg.hidden = !simples;
+  if (simples) {               // Game, Voice chat, Clean, Advanced, as on the PC
+    const pick = free("modeseg") ? s.simple : seg.dataset.pick;
+    for (const b of seg.children) { b.classList.toggle("sel", b.dataset.key === pick); }
+    $("mode").hidden = pick !== "advanced";   // the exact list is for Advanced
+    $("modenote").textContent = s.explain || "";
+    return;
+  }
+  $("mode").hidden = false;
   const d = modes.find((x) => x.key === $("mode").value);
   $("modenote").textContent = d ? d.note || "" : "";
 }
@@ -1213,10 +1353,8 @@ async function loadVoice() {
     try { voices = await ask("voices"); voiceOff = false; }
     catch (e) { if (e.status === 409) { voiceOff = true; } }
   }
-  if (can("setups")) {
-    try { setups = await ask("setups"); } catch (e) { setups = null; }
-  }
-  drawVoices(); drawVoice(); drawSetups();
+  await loadSetups();
+  drawVoices(); drawVoice();
 }
 
 function drawVoices() {
@@ -1230,11 +1368,13 @@ function drawVoices() {
       if (navigator.vibrate) { navigator.vibrate(12); }
       hold("voice");
       const off = st.voice && st.voice_name === v.name;   // the one on: tap again for off
-      send(off ? "voice?on=0" : "voice?name=" + q(v.name)).then(voiceSet, () => {});
+      send(off ? "voice?on=0" : "voice?name=" + q(v.name) + forHow()).then(voiceSet, () => {});
     });
     box.appendChild(b);
   }
 }
+
+function forHow() { return voiceSecs ? "&seconds=" + voiceSecs : ""; }
 
 function voiceSet(a) {
   st.voice = !!a.voice; st.voice_name = a.voice_name || ""; held.voice = 0; drawVoice();
@@ -1245,6 +1385,13 @@ function drawVoice() {
   $("vchanger").hidden = voiceOff;
   $("vsay").hidden = voiceOff || !can("say");
   $("vrandom").hidden = !can("setups");     // ?random=1 came with combos (older: a flip)
+  $("vlenbox").hidden = !can("setups");
+  const other = (st.voices_on || []).filter((k) => k !== "fx");
+  $("vother").hidden = !other.length;
+  $("vother").textContent = other.length > 1
+    ? "An AI voice and a language voice are on. You can turn them off on the PC."
+    : other[0] === "ai" ? "An AI voice is on. You can turn it off on the PC."
+    : "A language voice is on. You can turn it off on the PC.";
   if (free("voice")) {
     press($("vpower"), !!st.voice);
     for (const b of $("voices").children) {
@@ -1261,19 +1408,28 @@ function drawVoice() {
 
 function drawSetups() {
   const list = (setups && setups.setups) || [];
-  $("vcombos").hidden = !list.length || !can("setup");
-  const box = $("combos");
-  box.replaceChildren();
-  const on = (setups && setups.on && setups.on.sounds) || "";
-  for (const name of ["", ...list]) {
-    const b = document.createElement("button");
-    b.className = "chip" + (name === on ? " sel" : "");
-    b.textContent = name || "None";
-    b.addEventListener("click", () =>
-      send("setup?tab=sounds&name=" + q(name)).then((a) => { setups = a; drawSetups(); },
-                                                      () => {}));
-    box.appendChild(b);
+  for (const [card, id, tab] of [["vcombos", "combos", "sounds"], ["rcombos", "rcombo", "radio"],
+                                 ["acombos", "acombo", "apps"]]) {
+    $(card).hidden = !list.length || !can("setup");
+    const box = $(id);
+    box.replaceChildren();
+    const on = (setups && setups.on && setups.on[tab]) || "";
+    for (const name of ["", ...list]) {
+      const b = document.createElement("button");
+      b.className = "chip" + (name === on ? " sel" : "");
+      b.textContent = name || "None";
+      b.addEventListener("click", () =>
+        send("setup?tab=" + tab + "&name=" + q(name)).then((a) => { setups = a; drawSetups(); },
+                                                            () => {}));
+      box.appendChild(b);
+    }
   }
+}
+
+async function loadSetups() {
+  if (!can("setups")) { return; }
+  try { setups = await ask("setups"); } catch (e) { setups = null; }
+  drawSetups();
 }
 
 function flipSt(id, action, field) {
@@ -1292,8 +1448,17 @@ function buildVoice() {
   });
   $("vrandom").addEventListener("click", () => {
     hold("voice");
-    send("voice?random=1").then(voiceSet, () => {});
+    send("voice?random=1" + forHow()).then(voiceSet, () => {});
   });
+  for (const b of $("vlen").children) {
+    b.addEventListener("click", () => {
+      voiceSecs = num(b.dataset.s, 0);
+      for (const o of $("vlen").children) { o.classList.toggle("sel", o === b); }
+    });
+  }
+  $("sayagain").addEventListener("click", () =>
+    ask("say?again=1").then(() => flash($("sayagain"), "Saying it"),
+                            () => flash($("sayagain"), "Nothing yet", "")));
   flipSt("vmic", "mic", "mic");
   flipSt("vhear", "hear", "hear");
   flipSt("vgate", "mic_gate", "mic_gate");
@@ -1524,7 +1689,9 @@ async function status(options = {}) {
     markPlaying();
     const live = $("live");
     live.textContent = st.live ? "Live" : "Muted";
-    live.className = st.live ? "on" : "off";
+    const stuck = st.setup_ok === false;       // Live, and still nobody hears it
+    live.className = st.live ? (stuck ? "on warn" : "on") : "off";
+    $("setupwarn").hidden = !stuck;
     const pause = $("pause");
     pause.classList.toggle("paused", !!st.paused);
     pause.setAttribute("aria-label", st.paused ? "Resume" : "Pause");
@@ -1533,7 +1700,7 @@ async function status(options = {}) {
     drawTabs();
     drawVolume();
     drawLive(st);
-    drawMode(st.mode);
+    drawMode(st);
     drawRadio(st.radio);
     drawActs();
     drawQueue();
@@ -1633,6 +1800,7 @@ function start() {
     $("tab-" + name).addEventListener("click", () => show(name));
   }
   buildPads();
+  buildVolume();
   buildSound();
   buildRadio();
   buildVoice();
@@ -1687,10 +1855,10 @@ BODY = """<!doctype html>
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="Onion Board">
+<meta name="apple-mobile-web-app-title" content="Onion Pocket">
 <meta name="referrer" content="no-referrer">
 <link rel="icon" type="image/svg+xml" href="{icon}">
-<title>Onion Board</title>
+<title>Onion Pocket</title>
 <style>{style}</style>
 </head>
 <body>
@@ -1700,7 +1868,7 @@ BODY = """<!doctype html>
   <div class="brand">
     {logo}
     <div class="titles">
-      <h1>Onion Board <em>Pocket</em></h1>
+      <h1>Onion <em>Pocket</em></h1>
       <div class="state"><span id="dot" class="dot"></span><span id="state">Connecting…</span></div>
     </div>
     <button id="live" title="Live / Muted: muted, nobody hears your sounds">Live</button>
@@ -1723,13 +1891,17 @@ BODY = """<!doctype html>
       <button id="qshuf" class="chip" hidden
         title="Play every sound here in a random order">&#x1F500; Shuffle all</button>
       <button id="areplay" class="chip" hidden
-        title="Save the last seconds you heard as a new sound">&#x23FA;&#xFE0E; Save replay</button>
+        title="Save the last seconds you heard as a new sound">Save replay</button>
+      <button id="asort" class="chip" hidden
+        title="Your own order, or the sounds you play most first">My order</button>
     </div>
     <div id="upnext" class="upnext" hidden><span class="kicker">Up next</span>
       <span id="qlist"></span><button id="qclear" class="chip">Clear</button></div>
   </div>
 </header>
 <div id="msg" role="status"></div>
+<div id="setupwarn" class="banner" role="status" hidden>Others can't hear your sounds yet:
+  finish Setup in Onion Board on the PC.</div>
 <div id="connection-actions">
   <button id="retry" hidden>Try again</button>
   <button id="error-view" hidden>Error details</button>
@@ -1764,6 +1936,11 @@ BODY = """<!doctype html>
         <button id="rhear" class="toggle" aria-pressed="false"
           title="Also play the radio into your headphones">Hear it myself</button>
       </div>
+    </div>
+    <div id="rcombos" class="card" hidden>
+      <div class="head"><h2>Voice combos</h2></div>
+      <div id="rcombo" class="chips wrap"></div>
+      <p class="hint">Puts one of your saved combos on the radio.</p>
     </div>
     <div id="rlists" class="seg" role="tablist">
       <button data-list="favorites">&#x2605; Favorites</button>
@@ -1800,6 +1977,7 @@ BODY = """<!doctype html>
   </div>
   <div class="card">
     <div class="head"><h2>Who's listening</h2></div>
+    <div id="modeseg" class="seg" role="group" aria-label="Who's listening" hidden></div>
     <select id="mode" aria-label="Who's listening"></select>
     <p id="modenote" class="hint"></p>
   </div>
@@ -1819,7 +1997,17 @@ BODY = """<!doctype html>
   <div id="vchanger" class="card">
     <div class="head"><h2>Voice changer</h2></div>
     <button id="vpower" class="switch" aria-pressed="false">Change my voice</button>
+    <p id="vother" class="hint" role="status" hidden></p>
     <div id="voices" class="chips wrap"></div>
+    <div id="vlenbox" hidden>
+      <p class="hint">How long a voice you pick stays on</p>
+      <div id="vlen" class="seg vlen" role="group" aria-label="How long a voice stays on">
+        <button data-s="0" class="sel">Until off</button>
+        <button data-s="30">30 s</button>
+        <button data-s="60">1 min</button>
+        <button data-s="300">5 min</button>
+      </div>
+    </div>
     <button id="vrandom" class="vbtn" hidden>&#x1F3B2; Random voice</button>
   </div>
   <div id="vsay" class="card">
@@ -1827,6 +2015,7 @@ BODY = """<!doctype html>
     <textarea id="saytext" rows="2" maxlength="500" placeholder="Type a line for others to hear"
       aria-label="Line to say" enterkeyhint="send"></textarea>
     <div class="row"><button id="saygo" class="go">Say it</button>
+      <button id="sayagain">Again</button>
       <button id="saystop">Stop</button></div>
     <p class="hint">Others hear it in the Voice tab's computer voice (changed, if the
       voice changer is on).</p>
@@ -1847,11 +2036,20 @@ BODY = """<!doctype html>
 <section id="apps" class="view" hidden>
   <p id="appnote" class="note" role="status"></p>
   <ul id="applist" class="applist"></ul>
+  <div id="acombos" class="card" hidden>
+    <div class="head"><h2>Voice combos</h2></div>
+    <div id="acombo" class="chips wrap"></div>
+    <p class="hint">Puts one of your saved combos on every program you send.</p>
+  </div>
   <p class="hint">"Others hear it" sends that program's sound (music, a video) to
     whoever's listening, like the Send switch on the PC's Apps tab.</p>
 </section>
 
 <nav class="dock">
+  <div id="volrow" hidden>
+    <input id="volslider" type="range" min="0" max="200" step="5" aria-label="Volume">
+    <output id="volout"></output>
+  </div>
   <div class="row">
     <button id="stop" title="Stop every sound">Stop all</button>
     <button id="pause" class="toggle" aria-pressed="false" aria-label="Pause" hidden
@@ -1860,9 +2058,10 @@ BODY = """<!doctype html>
     <button id="reset" hidden title="Back to 1x, no pitch change, no effects">Reset all</button>
     <div class="vol">
       <button id="down" title="Quieter" aria-label="Quieter">&minus;</button>
-      <span class="meter"><span id="vlabel" class="vlabel">Sounds</span>
+      <button id="volbtn" class="meter" aria-expanded="false" aria-controls="volrow"
+        title="Show the volume slider"><span id="vlabel" class="vlabel">Sounds</span>
         <span id="vol" aria-label="Volume">&ndash;</span>
-        <span class="bar"><span id="volbar"></span></span></span>
+        <span class="bar"><span id="volbar"></span></span></button>
       <button id="up" title="Louder" aria-label="Louder">+</button>
     </div>
   </div>

@@ -85,3 +85,32 @@ def test_the_page_signs_exactly_as_python_does():
     want = [base64.urlsafe_b64encode(hmac.new(k.encode(), m.encode(), hashlib.sha256)
                                      .digest()).decode().rstrip("=") for k, m in cases]
     assert got == want
+
+
+def test_it_is_called_onion_pocket_everywhere():
+    html = page.page()[0].decode()
+    assert "<title>Onion Pocket</title>" in html and "<h1>Onion <em>Pocket</em></h1>" in html
+    assert 'apple-mobile-web-app-title" content="Onion Pocket"' in html
+
+
+def test_it_warns_while_others_cannot_hear_and_says_what_else_changes_the_voice():
+    """Green Live with nothing reaching others, and "off" with an AI voice on, both looked
+    fine on the phone. An older board sends neither field: no warning, no note."""
+    assert 'id="setupwarn"' in page.BODY and "st.setup_ok === false" in page.SCRIPT
+    assert 'id="vother"' in page.BODY and '(st.voices_on || []).filter' in page.SCRIPT
+
+
+def test_who_is_listening_offers_the_simple_modes_with_the_exact_list_as_a_fallback():
+    """The exact list's notes say things like "Opus 64 kbps": only Advanced and older
+    boards show that list."""
+    assert 'mode?simple=' in page.SCRIPT and "m.simples || null" in page.SCRIPT
+    assert '$("mode").hidden = pick !== "advanced"' in page.SCRIPT
+
+
+def test_new_pad_and_voice_controls_use_only_actions_the_page_already_has():
+    from onion_pocket import addon
+    for used in ("stop?id=", "volume?set", "say?again=1", "&seconds=", "setup?tab="):
+        assert used in page.SCRIPT or used == "volume?set"
+    assert '"?set=" + v' in page.SCRIPT
+    for action in ("stop", "volume", "radio_volume", "say", "voice", "setup", "mode"):
+        assert action in addon.ACTIONS

@@ -35,17 +35,23 @@
   *Live / Muted* (mute you for everyone). *Tap: queue it* makes a tap play that sound
   after the ones playing now; *Play all* / *Shuffle all* queue a whole category, *Up
   next* shows what's coming (*Clear* empties it). *Random*, *Again* (the last sound)
-  and *Save replay* (the last seconds you heard, as a new sound).
+  and *Save replay* (the last seconds you heard, as a new sound). A pad shows its hotkey,
+  length, FX and Loop; the ■ on a playing pad stops just that sound; *My order* / *Most
+  played* sorts them. A tap on the volume opens a slider. A warning shows while others
+  can't hear your sounds yet (needs a newer Onion Board).
 - **Radio:** play and stop the radio, your *Favorites*, *Recent* and *Popular*
   stations or a search, a random station, star a station, *Live* (others hear the
   radio) or *Only me*, *Hear it myself*, and the radio's volume.
 - **Sound:** the live speed (with the 0.5x–2x quick speeds) and pitch, *Keep pitch*,
   bass, treble, muffle, reverb, echo and distortion, the presets (*Bass boosted*,
-  *Underwater*, *Phone call*…), *Reset all*, and *Who's listening* (Discord, Steam
-  voice, Vivox…), and *Hotkeys on* (off: the PC's keys type normally again).
-- **Voice:** the voice changer on / off, pick a voice or a random one, *Say it* (type
-  a line, others hear it in the computer voice), *Others hear my mic*, *Mute my mic
-  while a sound plays*, *Hear what they hear*, and your saved voice combos.
+  *Underwater*, *Nightcore*…), *Reset all*, and *Who's listening* (Game, Voice chat, Clean, or
+  Advanced for the exact one), and *Hotkeys on* (off: the PC's keys type normally again).
+- **Voice:** the voice changer on / off, pick a voice or a random one, for good or for
+  30 s, 1 or 5 minutes, *Say it* (type a line, others hear it in the computer voice) and
+  *Again*, *Others hear my mic*, *Mute my mic
+  while a sound plays*, *Hear what they hear*, and your saved voice combos (on the Radio
+  and Apps tabs too). It says when an AI voice or a language voice is on, which you turn
+  off on the PC.
 - **Apps:** the programs on Onion Board's Apps tab: *Others hear it* sends that
   program's sound (Spotify, a video) to whoever's listening, with its own volume.
 

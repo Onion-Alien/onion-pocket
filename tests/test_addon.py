@@ -301,3 +301,12 @@ def test_a_board_that_checks_signatures_gets_the_signing_page(host):
     srv = host.servers[-1]
     assert srv.page == page.page(True, "", host.api_version, srv.actions)
     assert b"const SIGNED = true;" in srv.page[0]
+
+
+def test_the_card_tells_the_truth_about_the_mic(monkeypatch):
+    """Phones can switch the mic on or off (never hear it): the card said "never your mic"."""
+    import inspect
+
+    from onion_pocket import addon
+    text = inspect.getsource(addon.Pocket.card)
+    assert "never your mic" not in text and "switching your mic on or off" in text

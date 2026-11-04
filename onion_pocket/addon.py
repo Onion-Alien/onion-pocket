@@ -175,8 +175,9 @@ class Pocket:
             "Onion Pocket: your pads on your phone",
             "Scan the code with your phone's camera, and a tap on a pad plays it here. "
             "iPhone or Android, in the browser: nothing to install. Use it on your home "
-            "Wi-Fi, not on public Wi-Fi: anyone on the same network who gets the link "
-            "can play and stop your sounds (never your mic).")
+            "Wi-Fi, not on public Wi-Fi: anyone on the same network who gets the link can "
+            "do what your phone can, like playing sounds or switching your mic on or off "
+            "(never hearing it).")
         on = QCheckBox("Let phones on this Wi-Fi use it")
         on.setChecked(self.enabled)
         cv.addWidget(on)

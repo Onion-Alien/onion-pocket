@@ -1,6 +1,6 @@
 # Onion Board on phones: what's possible
 
-Research notes, checked 2026-10. Nothing here is built yet. Claims we couldn't
+Research notes, checked 2026-10; what got built is under *Status*. Claims we couldn't
 confirm from an official page are marked *unverified*.
 
 ## Summary
