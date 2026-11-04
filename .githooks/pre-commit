@@ -4,6 +4,9 @@
 root=$(git rev-parse --show-toplevel)
 py="$root/.venv/Scripts/python.exe"
 [ -x "$py" ] || py="$root/.venv/bin/python"
+main=$(cd "$(git rev-parse --git-common-dir)/.." && pwd)   # a worktree: the main checkout's
+[ -x "$py" ] || py="$main/.venv/Scripts/python.exe"
+[ -x "$py" ] || py="$main/.venv/bin/python"
 [ -x "$py" ] || py=python
 "$py" "$root/scripts/check_sensitive.py" --staged || {
     echo

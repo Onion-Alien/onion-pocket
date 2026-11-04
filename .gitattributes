@@ -1,0 +1,3 @@
+# Hooks and shell scripts run under sh on every OS: a CRLF checkout must not break them.
+.githooks/* text eol=lf
+*.sh text eol=lf

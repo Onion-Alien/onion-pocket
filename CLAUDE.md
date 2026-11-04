@@ -19,7 +19,24 @@ Everything here is published, like Onion Board and Onion Watch, history included
 - New network access must be added to `SECURITY.md`. No telemetry.
 
 Run `python scripts/check_sensitive.py` before committing. It's also the
-pre-commit hook: `git config core.hooksPath .githooks`.
+pre-commit hook: `git config core.hooksPath .githooks`. Your own identifiers go in
+`.sensitive-patterns` (git-ignored, in the main checkout: worktrees read it from there).
+Without it only the built-in rules run, and the scanner says so.
+
+## Commit times and merging
+
+Every commit's author and committer time must be `+0000`: a local time zone in a public
+repo says where the author lives.
+
+- `git config core.hooksPath .githooks` (required) turns on the hooks: `post-commit` and
+  `post-merge` re-stamp new commits in UTC, and `pre-push` refuses anything that isn't.
+- CI's *Commit times in UTC* step fails a PR that has any.
+- **Merge only with `sh scripts/merge_pr.sh N [--delete-branch]`**: never GitHub's merge
+  (the `gh` merge command, the Merge button) or *Update branch*, which write the commit
+  in your local time zone.
+- A branch whose commits aren't UTC: `sh scripts/utc_fix.sh`, then
+  `git push --force-with-lease`.
+- Never rewrite history already pushed to `main`.
 
 ## Working in the code
 
