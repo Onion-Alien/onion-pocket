@@ -3,6 +3,7 @@
     python scripts/check_sensitive.py             # files that would be published
     python scripts/check_sensitive.py --staged    # what is about to be committed
     python scripts/check_sensitive.py --history   # every blob + commit message ever
+    python scripts/check_sensitive.py --history origin/main..HEAD   # just those commits
 
 Built-in rules catch credential formats and machine-identifying data (user
 profile paths, LAN / Tailscale IPs, default Windows host names, e-mail
@@ -56,11 +57,26 @@ EMAIL_OK = re.compile(r"(?i)^(?:noreply|no-reply)@|@anthropic\.com$"
                       r"|^support@github\.com$")  # dependabot's Signed-off-by
 
 
+def private_patterns() -> Path:
+    """This checkout's .sensitive-patterns, or in a git worktree (which doesn't have the
+    ignored file) the main checkout's, so work in a worktree is scanned the same."""
+    if PRIVATE_PATTERNS.exists():
+        return PRIVATE_PATTERNS
+    try:
+        common = subprocess.run(["git", "rev-parse", "--git-common-dir"], cwd=ROOT,
+                                capture_output=True, text=True, check=True).stdout.strip()
+    except (OSError, subprocess.CalledProcessError):
+        return PRIVATE_PATTERNS
+    main = (ROOT / common).resolve().parent / PRIVATE_PATTERNS.name
+    return main if main.exists() else PRIVATE_PATTERNS
+
+
 def load_private_rules() -> list[tuple[str, re.Pattern[str]]]:
-    if not PRIVATE_PATTERNS.exists():
+    path = private_patterns()
+    if not path.exists():
         return []
     out = []
-    for n, line in enumerate(PRIVATE_PATTERNS.read_text(encoding="utf-8").splitlines(), 1):
+    for n, line in enumerate(path.read_text(encoding="utf-8").splitlines(), 1):
         line = line.strip()
         if line and not line.startswith("#"):
             try:
@@ -118,25 +134,47 @@ def scan_worktree(rules, staged: bool) -> list[str]:
     return hits
 
 
-def scan_history(rules) -> list[str]:
-    hits, seen = [], set()
-    for line in git("rev-list", "--all", "--objects").decode().splitlines():
+def git_in(stdin: bytes, *args: str) -> bytes:
+    return subprocess.run(["git", *args], cwd=ROOT, input=stdin, capture_output=True,
+                          check=True).stdout
+
+
+def history_blobs(revs: list[str]):
+    """(path, sha, bytes) for every file version the commits `revs` added, read by one
+    `git cat-file --batch` instead of two git processes per object (minutes -> s)."""
+    paths = {}
+    for line in git("rev-list", "--objects", *revs).decode().splitlines():
         sha, _, path = line.partition(" ")
-        if not path or sha in seen or path in SELF:
-            continue
-        seen.add(sha)
-        if git("cat-file", "-t", sha).strip() != b"blob":
-            continue
-        text = decode(git("cat-file", "-p", sha))
+        if path and path not in SELF:
+            paths.setdefault(sha, path)
+    check = git_in("\n".join(paths).encode(), "cat-file",
+                   "--batch-check=%(objectname) %(objecttype) %(objectsize)")
+    blobs = []
+    for line in check.decode().splitlines():
+        sha, kind, size = line.split()
+        if kind == "blob" and int(size) <= MAX_BYTES:   # bigger: decode() skips them
+            blobs.append(sha)
+    out, pos = git_in("\n".join(blobs).encode(), "cat-file", "--batch"), 0
+    for sha in blobs:
+        end = out.index(b"\n", pos)
+        size = int(out[pos:end].split()[2])
+        yield paths[sha], sha, out[end + 1:end + 1 + size]
+        pos = end + 1 + size + 1                         # the data's own newline
+
+
+def scan_history(rules, revs: list[str]) -> list[str]:
+    hits = []
+    for path, sha, data in history_blobs(revs):
+        text = decode(data)
         if text is not None:
             hits += scan_text(f"{path}@{sha[:8]}", text, rules)
-    log = git("log", "--all", "--format=%H%x00%an <%ae>%x00%cn <%ce>%x00%B%x01").decode()
+    log = git("log", *revs, "--format=%H%x00%an <%ae>%x00%cn <%ce>%x00%B%x01").decode()
     authors = set()
     for entry in filter(str.strip, log.split("\x01")):
         sha, author, committer, body = entry.strip().split("\0", 3)
         authors |= {author, committer}
         hits += scan_text(f"commit {sha[:8]} message", body, rules)
-    tags = git("for-each-ref", "refs/tags",
+    tags = "" if revs != ["--all"] else git("for-each-ref", "refs/tags",
                "--format=%(refname:short)%00%(taggername) %(taggeremail)%00%(contents)%01").decode()
     for entry in filter(str.strip, tags.split("\x01")):
         name, tagger, body = entry.strip().split("\0", 2)
@@ -154,14 +192,19 @@ def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
     g = ap.add_mutually_exclusive_group()
     g.add_argument("--staged", action="store_true", help="scan the index (pre-commit)")
-    g.add_argument("--history", action="store_true", help="scan every blob and commit message")
+    g.add_argument("--history", nargs="?", const="--all", metavar="RANGE",
+                   help="scan every blob and commit message, or just those of RANGE "
+                        "(e.g. origin/main..HEAD: a PR's own commits, seconds not minutes)")
     args = ap.parse_args()
 
     private = load_private_rules()
     if not private:
         print(f"note: no {PRIVATE_PATTERNS.name} file -- only built-in rules are active\n")
     rules = RULES + private
-    hits = scan_history(rules) if args.history else scan_worktree(rules, args.staged)
+    if args.history:
+        hits = scan_history(rules, args.history.split())
+    else:
+        hits = scan_worktree(rules, args.staged)
     for h in hits:
         print(h)
     print(f"\n{len(hits)} finding(s)." if hits else "No findings.")
